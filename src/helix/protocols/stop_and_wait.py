@@ -19,12 +19,12 @@ draw it. When this passes tests/test_protocols.py, delete the skip marker.
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any
 
 from .base import Packet, Protocol
 
 from ..engine.sim import Timer
-from ..engine.events import PACKET_SENT, TIMER_START, ACK_SENT,PACKET_DISCARDED, DELIVERED_TO_APP
+from ..engine.events import PACKET_SENT, TIMER_START, TIMER_TIMEOUT, ACK_SENT,PACKET_DISCARDED, DELIVERED_TO_APP
 
 
 class StopAndWait(Protocol):
@@ -35,7 +35,7 @@ class StopAndWait(Protocol):
         self.waiting_no = 0
         self.expected_seq = 0
         self.timer = Timer(self.sim)
-        self.outstanding: Packet | None = None
+        # self.outstanding: Packet | None = None
 
     def _drive(self, seq_no=0):
         if seq_no >= self.n_messages:
@@ -45,45 +45,36 @@ class StopAndWait(Protocol):
 
     def app_send(self, seq: int, payload: Any = None) -> None:
         pkt = Packet(seq, payload=payload)
-        self.outstanding = pkt
+        # self.outstanding = pkt
         self.sim.emit(PACKET_SENT, "sender", seq=seq, payload=payload)
         self.forward.transmit(
             pkt,
             self.recv_data,
         )
         self.sim.emit(TIMER_START, "sender", seq=seq, rto=self.rto)
-        self.timer.start(self.rto, lambda: self.app_send(seq, payload))
 
+        def _on_timeout() -> None:
+            self.sim.emit(TIMER_TIMEOUT, "sender", seq=seq)
+            self.app_send(seq, payload)
 
+        self.timer.start(self.rto, _on_timeout)
 
     def recv_data(self, pkt: Packet, corrupted: bool) -> None:
-        ack_seq = self.expected_seq
-        if corrupted:
-            self.sim.emit(PACKET_DISCARDED, "receiver", reason="corrupted_packet", seq=pkt.seq)
-            ack_seq = self.expected_seq - 1
-            if ack_seq < 0:
-                return 
-
-        elif pkt.seq == self.expected_seq:
+        if not corrupted and pkt.seq == self.expected_seq:
             self.sim.emit(DELIVERED_TO_APP, "receiver", seq=pkt.seq)
             self.delivered.append(pkt.seq)
+            ack_seq = self.expected_seq
             self.expected_seq += 1
         else:
-            self.sim.emit(PACKET_DISCARDED, "receiver", reason="invalid_sequence_number", seq=pkt.seq)
-
+            reason = "corrupted_packet" if corrupted else "invalid_sequence_number"
+            self.sim.emit(PACKET_DISCARDED, "receiver", reason=reason, seq=pkt.seq)
             ack_seq = self.expected_seq - 1
-
             if ack_seq < 0:
                 return  # nothing valid received yet; let the sender's timer retry
 
         return_pkt = Packet(seq=ack_seq, ack=True)
         self.sim.emit(ACK_SENT, "receiver", seq=ack_seq)
-        self.backward.transmit(
-            return_pkt,
-            self.recv_ack,
-        )
-
-
+        self.backward.transmit(return_pkt, self.recv_ack)
 
     def recv_ack(self, pkt: Packet, corrupted: bool) -> None:
         if not corrupted and pkt.seq == self.waiting_no:
@@ -91,9 +82,7 @@ class StopAndWait(Protocol):
             self.waiting_no += 1
             self._drive(self.waiting_no)
         else:
-            if corrupted:
-                self.sim.emit(PACKET_DISCARDED,"sender", reason="corrupt_packet", seq=pkt.seq)
-            else:
-                self.sim.emit(PACKET_DISCARDED,"sender", reason="invalid_sequence_number", seq=pkt.seq)
-    
+            reason = "corrupted_packet" if corrupted else "invalid_sequence_number"
+            self.sim.emit(PACKET_DISCARDED, "sender", reason=reason, seq=pkt.seq)
+
 

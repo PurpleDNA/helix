@@ -17,7 +17,7 @@ Then open web/index.html (or visit http://127.0.0.1:8000/ for a pointer).
 from __future__ import annotations
 
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 
 from .rdt_protocols import router as rdt_protocols_router
@@ -38,6 +38,21 @@ _DEMO_TIMELINE = [
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.websocket("/ws")
+async def ws_demo(websocket: WebSocket) -> None:
+    """Phase 0: stream the hardcoded demo timeline to prove the pipe."""
+    await websocket.accept()
+    try:
+        await websocket.send_json(
+            {"type": "timeline_start", "count": len(_DEMO_TIMELINE)}
+        )
+        for event in _DEMO_TIMELINE:
+            await websocket.send_json({"type": "event", "event": event})
+        await websocket.send_json({"type": "timeline_end"})
+    except WebSocketDisconnect:
+        return
 
 
 @app.get("/", response_class=HTMLResponse)
