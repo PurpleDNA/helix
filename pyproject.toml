@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "helix"
+version = "0.1.0"
+description = "Watch real network protocols run — a deterministic discrete-event simulation engine that streams protocol events to a frontend renderer."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "websockets>=12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",          # required by starlette's TestClient
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/helix"]
+
+[tool.pytest.ini_options]
+# Lets `pytest` find the package without an install step, so the suite is
+# green the moment you unzip. `pip install -e .` also works and is preferred
+# once you're iterating.
+pythonpath = ["src"]
+testpaths = ["tests"]
+asyncio_mode = "auto"

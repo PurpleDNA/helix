@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Helix — pipe test</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: #0e0b1a; color: #e7e2f5;
+    }
+    .wrap { width: min(720px, 90vw); }
+    h1 { font-weight: 600; letter-spacing: .02em; color: #c9b8ff; }
+    .track {
+      position: relative; height: 120px; margin: 24px 0;
+      border-left: 2px solid #2a2440; border-bottom: 2px solid #2a2440;
+    }
+    .dot {
+      position: absolute; bottom: -7px; width: 12px; height: 12px;
+      border-radius: 50%; background: #8b5cf6; transform: translateX(-50%);
+      box-shadow: 0 0 12px #8b5cf6aa; transition: opacity .3s; opacity: 0;
+    }
+    .dot.show { opacity: 1; }
+    .dot span {
+      position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+      font-size: 11px; color: #9d92c4; white-space: nowrap;
+    }
+    #log { color: #7a7196; font-size: 12px; white-space: pre-wrap; }
+    button {
+      font: inherit; color: #0e0b1a; background: #c9b8ff; border: 0;
+      padding: 8px 16px; border-radius: 6px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>helix · pipe test</h1>
+    <button id="go">connect &amp; stream</button>
+    <div class="track" id="track"></div>
+    <div id="log">idle.</div>
+  </div>
+
+  <script>
+    // Deliberately minimal — this is the throwaway skeleton renderer that
+    // proves Python -> WebSocket -> browser works. The real timeline player
+    // and per-protocol renderers are yours to build (Phase 7).
+    const URL = "ws://127.0.0.1:8000/ws";
+    const track = document.getElementById("track");
+    const log = document.getElementById("log");
+    const go = document.getElementById("go");
+
+    go.onclick = () => {
+      track.innerHTML = "";
+      log.textContent = "connecting…";
+      const events = [];
+      const ws = new WebSocket(URL);
+
+      ws.onmessage = (msg) => {
+        const data = JSON.parse(msg.data);
+        if (data.type === "timeline_start") {
+          log.textContent = `streaming ${data.count} events…`;
+        } else if (data.type === "event") {
+          events.push(data.event);
+          render(events);
+        } else if (data.type === "timeline_end") {
+          log.textContent = `done — ${events.length} events on the wire.`;
+          ws.close();
+        }
+      };
+      ws.onerror = () => { log.textContent = "connection failed — is uvicorn running?"; };
+    };
+
+    function render(events) {
+      const maxT = Math.max(1, ...events.map((e) => e.t));
+      track.innerHTML = "";
+      for (const e of events) {
+        const dot = document.createElement("div");
+        dot.className = "dot show";
+        dot.style.left = `${(e.t / maxT) * 100}%`;
+        dot.innerHTML = `<span>${e.type} @ t=${e.t}</span>`;
+        track.appendChild(dot);
+      }
+    }
+  </script>
+</body>
+</html>
