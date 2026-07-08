@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from .events import PACKET_DROPPED
+from .events import PACKET_DROPPED, PACKET_CORRUPTED
 from .sim import Sim
 
 
@@ -54,5 +54,7 @@ class UnreliableChannel:
             return
 
         corrupted = rng.random() < self.corrupt
+        if corrupted:
+            self.sim.emit(PACKET_CORRUPTED, "channel", label=label, reason="corruption")
         delay = self.base_delay + rng.random() * self.jitter
         self.sim.schedule(delay, lambda: on_deliver(payload, corrupted))

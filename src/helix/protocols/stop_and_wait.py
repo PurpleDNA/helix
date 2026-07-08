@@ -24,7 +24,7 @@ from typing import Any, Callable
 from .base import Packet, Protocol
 
 from ..engine.sim import Timer
-from ..engine.events import PACKET_SENT, TIMER_START, ACK_SENT, DELIVERED_TO_APP
+from ..engine.events import PACKET_SENT, TIMER_START, ACK_SENT,PACKET_DISCARDED, DELIVERED_TO_APP
 
 
 class StopAndWait(Protocol):
@@ -57,15 +57,20 @@ class StopAndWait(Protocol):
 
 
     def recv_data(self, pkt: Packet, corrupted: bool) -> None:
-        if not corrupted and pkt.seq == self.expected_seq:
+        ack_seq = self.expected_seq
+        if corrupted:
+            self.sim.emit(PACKET_DISCARDED, "receiver", reason="corrupted_packet", seq=pkt.seq)
+            ack_seq = self.expected_seq - 1
+            if ack_seq < 0:
+                return 
+
+        elif pkt.seq == self.expected_seq:
             self.sim.emit(DELIVERED_TO_APP, "receiver", seq=pkt.seq)
             self.delivered.append(pkt.seq)
-            ack_seq = self.expected_seq
             self.expected_seq += 1
         else:
-            # corrupted, or a duplicate of something we already delivered —
-            # re-ACK the last packet we *did* accept so the sender's timeout
-            # doesn't need to fire for it to learn we're still alive.
+            self.sim.emit(PACKET_DISCARDED, "receiver", reason="invalid_sequence_number", seq=pkt.seq)
+
             ack_seq = self.expected_seq - 1
 
             if ack_seq < 0:
@@ -85,7 +90,10 @@ class StopAndWait(Protocol):
             self.timer.stop()
             self.waiting_no += 1
             self._drive(self.waiting_no)
-        # else: stale or corrupted ACK — ignore it, the sender's timer
-        # will retransmit self.outstanding if the real ACK never arrives.
+        else:
+            if corrupted:
+                self.sim.emit(PACKET_DISCARDED,"sender", reason="corrupt_packet", seq=pkt.seq)
+            else:
+                self.sim.emit(PACKET_DISCARDED,"sender", reason="invalid_sequence_number", seq=pkt.seq)
     
 
