@@ -8,6 +8,9 @@ version = "0.1.0"
 description = "Watch real network protocols run — a deterministic discrete-event simulation engine that streams protocol events to a frontend renderer."
 readme = "README.md"
 requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "puprledna", email = "kadirimaroof@gmail.com" }]
+keywords = ["networking", "simulation", "protocols", "discrete-event", "rdt", "education"]
 dependencies = [
     "fastapi>=0.110",
     "uvicorn[standard]>=0.29",

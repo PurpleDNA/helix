@@ -67,3 +67,7 @@ invariant go green.
 
 The one invariant to never break: **for any seed and any loss < 1.0, the
 receiver delivers exactly the sent stream, in order.**
+
+## License
+
+[MIT](LICENSE) © puprledna
