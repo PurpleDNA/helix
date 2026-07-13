@@ -6,12 +6,12 @@ router = APIRouter(prefix="/ws/rdt-protocols")
 
 class RDTParams(BaseModel):
     protocol: str
-    n_messages: int = 20
+    n_messages: int = Field(20, ge=1)
     loss: float = Field(0.2, ge=0.0, lt=1.0)
     corrupt: float = Field(0.1, ge=0.0, le=1.0)
     seed: int = 0
-    window: int = 1
-    rto: float = 20.0
+    window: int = Field(1, ge=1)
+    rto: float = Field(20.0, gt=0.0)
 
 @router.websocket("/")
 async def rdt_ws(websocket: WebSocket, params: RDTParams = Depends()) -> None:

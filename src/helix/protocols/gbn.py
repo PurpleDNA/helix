@@ -122,9 +122,6 @@ class GoBackN(Protocol):
         if corrupted or pkt.seq != self.expected_seq_no:
             reason = "CORRUPTED PACKET" if corrupted else "OUT OF ORDER PACKET"
             self.sim.emit(PACKET_DISCARDED, "receiver", seq=pkt.seq, reason=reason)
-            # Re-ACK the last in-order seq: a sender whose ACKs were lost is
-            # retransmitting a window we already delivered, and silence here
-            # would leave it retransmitting forever.
             if self.expected_seq_no > 0:
                 self._send_ack(self.expected_seq_no - 1)
             return
