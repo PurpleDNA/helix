@@ -24,7 +24,7 @@ from typing import Any
 from .base import Packet, Protocol
 
 from ..engine.sim import Timer
-from ..engine.events import PACKET_SENT, TIMER_START, TIMER_TIMEOUT, ACK_SENT,PACKET_DISCARDED, DELIVERED_TO_APP
+from ..engine.events import PACKET_SENT, TIMER_START, TIMER_TIMEOUT, ACK_SENT,PACKET_DISCARDED, DELIVERED_TO_APP, ACK_RECEIVED
 
 
 class StopAndWait(Protocol):
@@ -37,10 +37,12 @@ class StopAndWait(Protocol):
         self.timer = Timer(self.sim)
         # self.outstanding: Packet | None = None
 
+    # -- sender ----------------------------------------------------------
+
     def _drive(self, seq_no=0):
         if seq_no >= self.n_messages:
             return
-        self.app_send(seq_no, payload=f"m{seq_no}")
+        self.app_send(seq_no, payload=f"Application Data: {seq_no}")
 
 
     def app_send(self, seq: int, payload: Any = None) -> None:
@@ -59,6 +61,19 @@ class StopAndWait(Protocol):
 
         self.timer.start(self.rto, _on_timeout)
 
+    def recv_ack(self, pkt: Packet, corrupted: bool) -> None:
+        if not corrupted and pkt.seq == self.waiting_no:
+            self.sim.emit(ACK_RECEIVED, "sender", seq=pkt.seq)
+            self.timer.stop()
+            self.waiting_no += 1
+            self._drive(self.waiting_no)
+        else:
+            reason = "CORRUPTED PACKET" if corrupted else "INVALID SEQUENCE NUMBER"
+            self.sim.emit(PACKET_DISCARDED, "sender", reason=reason, seq=pkt.seq)
+
+
+    # -- receiver ----------------------------------------------------------
+
     def recv_data(self, pkt: Packet, corrupted: bool) -> None:
         if not corrupted and pkt.seq == self.expected_seq:
             self.sim.emit(DELIVERED_TO_APP, "receiver", seq=pkt.seq)
@@ -66,7 +81,7 @@ class StopAndWait(Protocol):
             ack_seq = self.expected_seq
             self.expected_seq += 1
         else:
-            reason = "corrupted_packet" if corrupted else "invalid_sequence_number"
+            reason = "CORRUPTED PACKET" if corrupted else "INVALID SEQUENCE NUMBER"
             self.sim.emit(PACKET_DISCARDED, "receiver", reason=reason, seq=pkt.seq)
             ack_seq = self.expected_seq - 1
             if ack_seq < 0:
@@ -75,14 +90,5 @@ class StopAndWait(Protocol):
         return_pkt = Packet(seq=ack_seq, ack=True)
         self.sim.emit(ACK_SENT, "receiver", seq=ack_seq)
         self.backward.transmit(return_pkt, self.recv_ack)
-
-    def recv_ack(self, pkt: Packet, corrupted: bool) -> None:
-        if not corrupted and pkt.seq == self.waiting_no:
-            self.timer.stop()
-            self.waiting_no += 1
-            self._drive(self.waiting_no)
-        else:
-            reason = "corrupted_packet" if corrupted else "invalid_sequence_number"
-            self.sim.emit(PACKET_DISCARDED, "sender", reason=reason, seq=pkt.seq)
 
 

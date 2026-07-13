@@ -28,7 +28,6 @@ def test_stop_and_wait_is_reliable(seed, loss):
     _assert_reliable(StopAndWait(n_messages=20, loss=loss, seed=seed))
 
 
-@pytest.mark.skip(reason="Implement GoBackN (Phase 4), then remove this skip.")
 @pytest.mark.parametrize("seed", SEEDS)
 @pytest.mark.parametrize("loss", [0.0, 0.1, 0.3, 0.5])
 def test_gbn_is_reliable(seed, loss):

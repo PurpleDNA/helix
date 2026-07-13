@@ -26,3 +26,4 @@ TIMER_TIMEOUT = "TIMER_TIMEOUT"        # data={seq?}
 WINDOW_UPDATE = "WINDOW_UPDATE"        # data={base, nextseqnum, size}
 BUFFERED = "BUFFERED"                  # data={seq}   (Selective Repeat receiver)
 DELIVERED_TO_APP = "DELIVERED_TO_APP"  # data={seq}   (in-order delivery upward)
+WINDOW_FULL = "WINDOW_FULL"
