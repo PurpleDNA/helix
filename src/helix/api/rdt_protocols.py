@@ -15,9 +15,10 @@ class RDTParams(BaseModel):
 
 @router.websocket("/")
 async def rdt_ws(websocket: WebSocket, params: RDTParams = Depends()) -> None:
+    await websocket.accept()
+
     desired_proto = REGISTRY.get(params.protocol)
     if desired_proto is None:
-        await websocket.accept()
         await websocket.send_json(
             {"type": "error", "message": f"unknown protocol: {params.protocol!r}"}
         )
@@ -25,10 +26,14 @@ async def rdt_ws(websocket: WebSocket, params: RDTParams = Depends()) -> None:
         return
 
     kwargs = params.model_dump(exclude={"protocol"})
-    protocol_instance = desired_proto(**kwargs)
-    timeline = protocol_instance.run()
+    try:
+        protocol_instance = desired_proto(**kwargs)
+        timeline = protocol_instance.run()
+    except ValueError as exc:
+        await websocket.send_json({"type": "error", "message": str(exc)})
+        await websocket.close()
+        return
 
-    await websocket.accept()
     try:
         await websocket.send_json({"type": "timeline_start", "count": len(timeline)})
         for event in timeline:
