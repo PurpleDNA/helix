@@ -1,11 +1,3 @@
-"""Shared protocol scaffolding: the packet shape and the sender/receiver roles.
-
-The three RDT protocols (stop-and-wait, Go-Back-N, Selective Repeat) all speak
-in :class:`Packet` and all plug into the same :class:`Sim` + channel. Keeping a
-common base means the FastAPI layer and the tests treat every protocol
-identically — construct it, run it, read ``sim.trace``.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -16,13 +8,6 @@ from helix.engine import Sim, UnreliableChannel
 
 @dataclass
 class Packet:
-    """A unit on the wire. ``ack=True`` marks it as an acknowledgement.
-
-    ``corrupted`` is set by the channel on delivery, not by the sender. Real
-    protocols detect this via a checksum; here it's a flag your receiver FSM
-    checks before accepting.
-    """
-
     seq: int = 0
     ack: bool = False
     payload: Any = None
@@ -31,21 +16,6 @@ class Packet:
 
 
 class Protocol:
-    """Base class wiring a sender+receiver to a shared sim and two channels.
-
-    Subclasses implement the FSMs. This base just holds the plumbing and the
-    application-level driver (``deliver_stream``) that feeds N messages in and
-    lets the simulation run to completion.
-
-    Subclass contract — implement:
-        app_send(self, seq, payload)   # sender: application hands down data
-        recv_data(self, pkt)           # receiver: a data packet arrives
-        recv_ack(self, pkt)            # sender: an ACK arrives
-
-    Emit events through ``self.sim.emit(...)`` using the vocabulary in
-    ``helix.engine.events`` so the frontend can render your protocol.
-    """
-
     name: str = "base"
 
     def __init__(
@@ -77,20 +47,13 @@ class Protocol:
 
     # -- lifecycle you may override --------------------------------------
     def _setup(self) -> None:
-        """Hook for subclasses to init window state, timers, buffers, etc."""
+        raise NotImplementedError
 
     def run(self) -> list[dict]:
-        """Kick off the app-level send loop and drain the simulation."""
         self._drive()
         return self.sim.run(until=self.rto * self.n_messages * 100)  # safety cap
 
     def _drive(self) -> None:
-        """Feed the application stream into the sender.
-
-        The simplest driver: hand every message to the sender at t=0 and let
-        the window logic throttle. Subclasses with flow control can override
-        to pace sends behind window availability.
-        """
         for seq in range(self.n_messages):
             self.app_send(seq, payload=f"m{seq}")
 

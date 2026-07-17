@@ -34,7 +34,7 @@ def test_gbn_is_reliable(seed, loss):
     _assert_reliable(GoBackN(n_messages=20, window=4, loss=loss, seed=seed))
 
 
-@pytest.mark.skip(reason="Implement SelectiveRepeat (Phase 5), then remove this skip.")
+# @pytest.mark.skip(reason="Implement SelectiveRepeat (Phase 5), then remove this skip.")
 @pytest.mark.parametrize("seed", SEEDS)
 @pytest.mark.parametrize("loss", [0.0, 0.1, 0.3, 0.5])
 def test_selective_repeat_is_reliable(seed, loss):

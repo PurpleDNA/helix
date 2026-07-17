@@ -1,17 +1,10 @@
-"""The event vocabulary — your contract with the frontend.
-
-Every actor in a simulation emits events drawn from this vocabulary via
-``sim.emit(TYPE, actor, **data)``. If the frontend can reconstruct a sender's
-sliding window from ``WINDOW_UPDATE`` events alone, you've designed the schema
-well. Add new types deliberately; renderers depend on these strings.
-"""
-
 # --- data-plane movement ---------------------------------------------------
 PACKET_SENT = "PACKET_SENT"            # data={seq, payload?}
 PACKET_DROPPED = "PACKET_DROPPED"      # data={label, reason}  reason: "loss"
 PACKET_CORRUPTED = "PACKET_CORRUPTED"  # data={seq}
 PACKET_RECEIVED = "PACKET_RECEIVED" 
 PACKET_DISCARDED = "PACKET_DISCARDED"   # data={seq, corrupted}
+PACKET_BUFFERING = "PACKET_BUFFERING"
 
 # --- acknowledgements ------------------------------------------------------
 ACK_SENT = "ACK_SENT"                  # data={acknum, sack?}

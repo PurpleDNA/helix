@@ -1,22 +1,3 @@
-"""Stop-and-wait — rdt3.0. Your Phase 3 warmup.
-
-This is Go-Back-N with N=1, but it exercises the *entire* loop:
-send -> start timer -> (timeout -> retransmit) | (ACK -> stop timer -> advance).
-Get this delivering bytes reliably end-to-end before you touch windows.
-
-TODO (yours to implement):
-  * a single alternating-bit or monotonic sequence number
-  * one Timer (from helix.engine)
-  * on app_send: emit PACKET_SENT, transmit over self.forward, start timer
-  * on recv_data (receiver side): check corruption/expected seq, ACK it,
-    deliver in order via self.delivered.append(seq) + DELIVERED_TO_APP
-  * on recv_ack: if it's the ACK you're waiting for, stop timer, send next
-  * on timeout: retransmit the outstanding packet
-
-Emit events using the vocabulary in helix.engine.events so the frontend can
-draw it. When this passes tests/test_protocols.py, delete the skip marker.
-"""
-
 from __future__ import annotations
 
 from typing import Any
