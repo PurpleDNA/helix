@@ -1,0 +1,77 @@
+/* First-screen terminal intro: an nmap-style protocol scan in the helix
+   palette. Phosphor glow and scanlines are the point here, not decoration. */
+
+.intro-terminal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #171c2b;
+  cursor: pointer;
+  transition: opacity 0.55s ease;
+}
+
+.intro-terminal.leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* CRT scanlines over the whole screen */
+.intro-terminal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.14) 0px,
+    rgba(0, 0, 0, 0.14) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.intro-screen {
+  padding: clamp(1.25rem, 5vh, 3.5rem) clamp(1rem, 5vw, 3.5rem);
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: clamp(0.72rem, 1.7vw, 0.95rem);
+  line-height: 1.6;
+  color: var(--helix-moss);
+  text-shadow: 0 0 8px rgba(157, 191, 120, 0.35);
+  white-space: pre-wrap;
+  overflow: hidden;
+}
+
+.intro-screen .cmd {
+  color: var(--helix-mint);
+  font-weight: 500;
+}
+
+.intro-screen .bright {
+  color: var(--helix-mint);
+}
+
+.intro-cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.1em;
+  vertical-align: text-bottom;
+  background: var(--helix-moss);
+  box-shadow: 0 0 8px rgba(157, 191, 120, 0.55);
+  animation: intro-blink 1s steps(2, start) infinite;
+}
+
+@keyframes intro-blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+.intro-skip {
+  position: absolute;
+  bottom: 1.1rem;
+  right: 1.4rem;
+  margin: 0;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: rgba(157, 191, 120, 0.45);
+}

@@ -1,0 +1,183 @@
+/* Helix landing page. Dark stage (--helix-night), pixel-green voice (--helix-moss):
+   the reverse of the source image the palette came from. */
+
+.landing {
+  min-height: 100dvh;
+  background: var(--helix-night);
+  color: var(--helix-frost);
+  font-family: "Geist", system-ui, sans-serif;
+}
+
+/* ---------- header ---------- */
+
+.landing-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 clamp(1rem, 4vw, 2.5rem);
+  background: rgba(39, 46, 66, 0.55);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border-bottom: 1px solid rgba(214, 234, 233, 0.08);
+  box-shadow: inset 0 1px 0 rgba(214, 234, 233, 0.06);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .landing-header {
+    background: var(--helix-night);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+.landing-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-decoration: none;
+}
+
+.landing-brand img {
+  height: 20px;
+  width: auto;
+  display: block;
+  /* source logo is dark teal, invisible on the dark header: lift it to frost */
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
+}
+
+.landing-brand span {
+  font-family: "Geist Pixel", monospace;
+  font-size: 1.4rem;
+  color: var(--helix-frost);
+  line-height: 1;
+}
+
+.landing-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.built-by {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: rgba(214, 234, 233, 0.85);
+  text-decoration: none;
+}
+
+.built-by:hover {
+  color: var(--helix-mint);
+}
+
+.built-by img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(157, 191, 120, 0.55);
+}
+
+.repo-link {
+  display: grid;
+  place-items: center;
+  color: var(--helix-frost);
+}
+
+.repo-link:hover {
+  color: var(--helix-moss);
+}
+
+.repo-link svg {
+  width: 21px;
+  height: 21px;
+}
+
+@media (max-width: 640px) {
+  .built-by span {
+    display: none;
+  }
+}
+
+/* ---------- hero ---------- */
+
+.hero-stage {
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 6rem 1.5rem 4rem;
+}
+
+.hero-hands {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  /* flip the near-black pixels to moss green: the reverse of the source image */
+  /* filter: invert(0.82) sepia(0.55) saturate(1.9) hue-rotate(52deg) brightness(0.95); */
+  opacity: 0.9;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* readability scrim between the hands and the copy */
+.hero-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse 65% 52% at 50% 56%,
+    rgba(39, 46, 66, 0.9),
+    rgba(39, 46, 66, 0) 72%
+  );
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 62rem;
+}
+
+.hero-copy h1 {
+  margin: 0;
+  font-family: "Geist Pixel", monospace;
+  font-weight: 400;
+  font-size: clamp(2.4rem, 6.5vw, 5.75rem);
+  line-height: 1.08;
+  letter-spacing: 0.01em;
+  color: var(--helix-moss);
+  text-wrap: balance;
+}
+
+.hero-sub {
+  margin: 1.6rem 0 0;
+  font-weight: 500;
+  font-size: clamp(0.78rem, 1.5vw, 1rem);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--helix-mint);
+}
+
+.hero-quote {
+  margin: 2.75rem auto 0;
+  max-width: 36rem;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.02rem;
+  line-height: 1.75;
+  color: rgba(214, 234, 233, 0.72);
+}

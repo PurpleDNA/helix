@@ -7,13 +7,13 @@ import RdtProtocols from './pages/RdtProtocols'
 import './index.css'
 
 const router = createBrowserRouter([
+  // The landing page owns its full viewport (own header, hero); the App
+  // layout with the plain header still wraps the tool pages.
+  { path: '/', element: <Home /> },
   {
     path: '/',
     element: <App />,
-    children: [
-      { index: true, element: <Home /> },
-      { path: 'rdt', element: <RdtProtocols /> },
-    ],
+    children: [{ path: 'rdt', element: <RdtProtocols /> }],
   },
 ])
 

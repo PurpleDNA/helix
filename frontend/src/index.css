@@ -1,6 +1,39 @@
 /* Deliberately minimal base — the real Helix look lands once the design
    direction is settled. Only structure lives here, not aesthetics. */
 
+@font-face {
+  font-family: 'Geist Pixel';
+  src: url('/fonts/GeistPixel-Square.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Helix palette */
+  --helix-night: #272e42;
+  --helix-forest: #264935;
+  --helix-moss: #9dbf78;
+  --helix-mint: #c5ead9;
+  --helix-frost: #d6eae9;
+}
+
 :root {
   --text: #1a1a1a;
   --text-soft: #666;

@@ -1,47 +1,63 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import IntroTerminal from './IntroTerminal'
+import './home.css'
 
-const visualizations = [
-  {
-    title: 'Reliable Data Transfer',
-    description:
-      'Stop-and-Wait, Go-Back-N, and Selective Repeat — watch packets, ACKs, timers, and windows in motion.',
-    to: '/rdt',
-    ready: true,
-  },
-  {
-    title: 'Traceroute',
-    description: 'Hop-by-hop paths across the planet, rendered on a globe.',
-    to: null,
-    ready: false,
-  },
-  {
-    title: 'DNS',
-    description: 'A name becomes an address: recursion, referral, and caching.',
-    to: null,
-    ready: false,
-  },
-]
+const REPO_URL = 'https://github.com/PurpleDNA/helix'
 
 export default function Home() {
+  const [showIntro, setShowIntro] = useState(
+    () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
+
   return (
-    <>
-      <section className="hero">
-        <h1>Helix</h1>
-        <p>Network protocols, visualized.</p>
+    <div className="landing">
+      {showIntro && <IntroTerminal onDone={() => setShowIntro(false)} />}
+      <header className="landing-header">
+        <Link to="/" className="landing-brand">
+          <img src="/assets/helixx_logo.png" alt="" />
+          <span>helix</span>
+        </Link>
+        <div className="landing-header-right">
+          <a
+            className="built-by"
+            href="https://github.com/PurpleDNA"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <img src="/assets/ugly_dude.jpg" alt="PurpleDNA" />
+            <span>built by PurpleDNA</span>
+          </a>
+          <a
+            className="repo-link"
+            href={REPO_URL}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Helix on GitHub"
+          >
+            <svg aria-hidden="true">
+              <use href="/icons.svg#github-icon" />
+            </svg>
+          </a>
+        </div>
+      </header>
+
+      <section className="hero-stage">
+        <img
+          className="hero-hands"
+          src="/assets/nokia_transparent.png"
+          alt=""
+          aria-hidden="true"
+        />
+        <div className="hero-copy">
+          <h1>NETWORK PROTOCOL SIMULATOR</h1>
+          <p className="hero-sub">Watch network protocols in action</p>
+          <p className="hero-quote">
+            &ldquo;Tell me and I forget. Show me and I remember. Involve me and
+            I understand.&rdquo;
+          </p>
+        </div>
       </section>
-      <section className="viz-grid">
-        {visualizations.map((viz) => (
-          <article key={viz.title} className="viz-card">
-            <h2>{viz.title}</h2>
-            <p>{viz.description}</p>
-            {viz.ready && viz.to ? (
-              <Link to={viz.to}>Open</Link>
-            ) : (
-              <span className="soon">Coming soon</span>
-            )}
-          </article>
-        ))}
-      </section>
-    </>
+    </div>
   )
 }
