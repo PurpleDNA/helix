@@ -17,41 +17,60 @@ function timestamp() {
 }
 
 const SCRIPT: ScriptLine[] = [
-  { text: '# helix --scan protocols', delay: 350, typed: true, cls: 'cmd' },
-  { text: '', delay: 250 },
+  { text: '# helix --scan protocols', delay: 250, typed: true, cls: 'cmd' },
+  { text: '', delay: 170 },
   {
     text: `Starting helix ( github.com/PurpleDNA/helix ) at ${timestamp()}`,
-    delay: 150,
+    delay: 100,
   },
-  { text: 'Interesting protocols on helix.local (127.0.0.1):', delay: 400 },
+  { text: 'resolving helix.local ............. 127.0.0.1', delay: 280 },
+  { text: 'reply from 127.0.0.1: time=0.031 ms', delay: 200 },
+  { text: '', delay: 140 },
+  { text: 'Interesting protocols on helix.local (127.0.0.1):', delay: 220 },
   {
     text: '(The 65535 ports scanned but not shown below are in state: boring)',
-    delay: 150,
+    delay: 100,
   },
-  { text: 'PROTOCOL          STATE  SERVICE', delay: 300, cls: 'bright' },
-  { text: 'stop-and-wait     up     reliable data transfer', delay: 90 },
-  { text: 'go-back-n         up     reliable data transfer', delay: 80 },
-  { text: 'selective-repeat  up     reliable data transfer', delay: 80 },
-  { text: 'traceroute        soon   path discovery', delay: 80 },
-  { text: 'dns               soon   name resolution', delay: 80 },
-  { text: '', delay: 180 },
+  { text: 'PROTOCOL          STATE  SERVICE', delay: 200, cls: 'bright' },
+  { text: 'stop-and-wait     up     reliable data transfer', delay: 60 },
+  { text: 'go-back-n         up     reliable data transfer', delay: 55 },
+  { text: 'selective-repeat  up     reliable data transfer', delay: 55 },
+  { text: 'traceroute        soon   path discovery', delay: 55 },
+  { text: 'dns               soon   name resolution', delay: 55 },
+  { text: '', delay: 150 },
+  { text: 'Device type: web browser', delay: 180 },
+  { text: 'Running: JavaScript (single-threaded, as always)', delay: 90 },
+  { text: 'Uptime: 0.000 days (you just got here)', delay: 90 },
+  { text: '', delay: 150 },
+  { text: 'calibrating packet timers .......... ok', delay: 230 },
+  { text: 'seeding artificial packet loss ..... ok', delay: 200 },
+  { text: 'warming up pixel hands (est. 1997) . ok', delay: 200 },
+  { text: '', delay: 120 },
   {
     text: 'handshake: SYN > SYN/ACK < ACK        established',
-    delay: 380,
+    delay: 260,
   },
-  { text: '', delay: 150 },
+  { text: '', delay: 100 },
   {
     text: 'helix finished: 5 protocols scanned (3 up) in 0.042 seconds',
-    delay: 320,
+    delay: 220,
     cls: 'bright',
   },
 ]
 
-const TYPE_SPEED = 26
-const HOLD_AFTER = 700
+const TYPE_SPEED = 18
+const HOLD_AFTER = 550
 const FADE_MS = 550
 
-export default function IntroTerminal({ onDone }: { onDone: () => void }) {
+export default function IntroTerminal({
+  onLeaving,
+  onDone,
+}: {
+  /** fired when the fade-out starts: the hero is becoming visible */
+  onLeaving: () => void
+  /** fired when the fade-out ends and the overlay can unmount */
+  onDone: () => void
+}) {
   const [lineCount, setLineCount] = useState(0)
   const [partial, setPartial] = useState<string | null>(null)
   const [leaving, setLeaving] = useState(false)
@@ -65,6 +84,7 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
       if (finished.current) return
       finished.current = true
       setLeaving(true)
+      onLeaving()
       timer.current = window.setTimeout(onDone, FADE_MS)
     }
 
@@ -114,7 +134,7 @@ export default function IntroTerminal({ onDone }: { onDone: () => void }) {
       window.removeEventListener('keydown', skip)
       window.removeEventListener('pointerdown', skip)
     }
-  }, [onDone])
+  }, [onLeaving, onDone])
 
   return (
     <div className={leaving ? 'intro-terminal leaving' : 'intro-terminal'}>

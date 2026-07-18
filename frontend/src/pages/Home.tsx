@@ -1,18 +1,27 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import IntroTerminal from './IntroTerminal'
+import HeroHands from './HeroHands'
 import './home.css'
 
 const REPO_URL = 'https://github.com/PurpleDNA/helix'
 
+const reducedMotion = () =>
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
 export default function Home() {
-  const [showIntro, setShowIntro] = useState(
-    () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  )
+  const [introMounted, setIntroMounted] = useState(() => !reducedMotion())
+  // flips as the terminal starts fading: cue for the hands' pixel dissolve
+  const [revealed, setRevealed] = useState(() => reducedMotion())
+
+  const handleLeaving = useCallback(() => setRevealed(true), [])
+  const handleDone = useCallback(() => setIntroMounted(false), [])
 
   return (
     <div className="landing">
-      {showIntro && <IntroTerminal onDone={() => setShowIntro(false)} />}
+      {introMounted && (
+        <IntroTerminal onLeaving={handleLeaving} onDone={handleDone} />
+      )}
       <header className="landing-header">
         <Link to="/" className="landing-brand">
           <img src="/assets/helixx_logo.png" alt="" />
@@ -43,12 +52,7 @@ export default function Home() {
       </header>
 
       <section className="hero-stage">
-        <img
-          className="hero-hands"
-          src="/assets/nokia_transparent.png"
-          alt=""
-          aria-hidden="true"
-        />
+        <HeroHands play={revealed} />
         <div className="hero-copy">
           <h1>NETWORK PROTOCOL SIMULATOR</h1>
           <p className="hero-sub">Watch network protocols in action</p>
