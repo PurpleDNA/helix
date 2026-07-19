@@ -1,0 +1,611 @@
+/* The Instrument — live stage for the RDT protocols.
+   The panel is committed-dark "scope glass" regardless of site theme;
+   the page chrome around it follows the site. */
+
+.rdt {
+  --ground: #0e1118;
+  --panel: #161b26;
+  --panel-edge: #2c3550;
+  --grid: #232b3e;
+  --ink: #d6eae9;
+  --ink-dim: #7c8aa0;
+  --ink-faint: #4a5570;
+  --data: var(--helix-moss);
+  --data-head: var(--helix-mint);
+  --ackc: rgba(214, 234, 233, 0.6);
+  --bad: #e0685a;
+  --warn: #e5b35e;
+}
+
+/* Page head speaks the landing's voice: Geist Pixel, green, roomy sub. */
+.rdt-head h1 {
+  margin: 0;
+  font-family: 'Geist Pixel', monospace;
+  font-weight: 400;
+  font-size: clamp(2.1rem, 5.2vw, 3.6rem);
+  letter-spacing: 0.03em;
+  line-height: 1.05;
+  text-transform: uppercase;
+  text-wrap: balance;
+  /* moss washes out on the light ground; forest is the light-theme voice */
+  color: var(--helix-forest);
+}
+
+.rdt-head p {
+  margin: 1.1rem 0 0;
+  max-width: 34rem;
+  font-size: clamp(0.98rem, 1.6vw, 1.12rem);
+  line-height: 1.6;
+  color: var(--text-soft);
+}
+
+@media (prefers-color-scheme: dark) {
+  .rdt-head h1 {
+    color: var(--helix-moss);
+  }
+
+  .rdt-head p {
+    color: rgba(214, 234, 233, 0.68);
+  }
+}
+
+/* ---- form ---------------------------------------------------------- */
+.rdt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0 24px;
+}
+
+.proto-picker {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.proto-picker button {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.proto-picker button.on {
+  background: var(--helix-forest);
+  border-color: var(--helix-forest);
+  color: var(--helix-mint);
+}
+
+.proto-picker button:focus-visible,
+.rdt .btn:focus-visible {
+  outline: 2px solid var(--helix-moss);
+  outline-offset: 1px;
+}
+
+.rdt-form .fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.rdt-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rdt-form label span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-soft);
+}
+
+.rdt-form input {
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  width: 5.5rem;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.rdt-form input:disabled {
+  opacity: 0.45;
+}
+
+.form-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+/* ---- shared button ------------------------------------------------- */
+.rdt .btn {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--panel-edge);
+  border-radius: 3px;
+  padding: 5px 12px;
+}
+
+.rdt-form .btn {
+  background: var(--helix-forest);
+  border-color: var(--helix-forest);
+  color: var(--helix-mint);
+  padding: 8px 18px;
+}
+
+.rdt .btn:hover:not(:disabled) {
+  border-color: var(--data);
+  color: var(--data-head);
+}
+
+.rdt .btn:disabled {
+  opacity: 0.5;
+}
+
+.rdt .btn.primary {
+  border-color: var(--data);
+  color: var(--data-head);
+}
+
+/* ---- instrument panel ---------------------------------------------- */
+.rdt-panel {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 13px;
+  background: var(--ground);
+  border: 1px solid var(--panel-edge);
+  border-radius: 8px;
+  padding: 14px;
+  color: var(--ink);
+}
+
+.rdt .readouts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rdt .readout {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  background: var(--panel);
+  border: 1px solid var(--grid);
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-size: 11.5px;
+}
+
+.rdt .readout .k {
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 10px;
+}
+
+.rdt .readout .v {
+  color: var(--ink);
+}
+
+.rdt .readout.clock .v {
+  color: var(--warn);
+  min-width: 5ch;
+  display: inline-block;
+}
+
+.rdt .readout.prog .v {
+  color: var(--data-head);
+}
+
+.rdt .readouts .spacer {
+  flex: 1;
+}
+
+/* ---- stage ---------------------------------------------------------- */
+.rdt .stage-frame {
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  box-shadow: inset 0 0 60px rgba(8, 10, 16, 0.5);
+  padding: 10px 0 6px;
+}
+
+.rdt .stage-frame[data-loading] {
+  opacity: 0.5;
+}
+
+.rdt .stage-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.rdt .stage {
+  position: relative;
+  margin: 0 auto;
+}
+
+.rdt .strip {
+  position: relative;
+  height: 46px;
+}
+
+.rdt .strip .who {
+  position: sticky;
+  left: 8px;
+  top: 0;
+  width: 0;
+  overflow: visible;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rdt .cells {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  display: flex;
+  gap: 3px;
+  padding: 0 8px;
+}
+
+.rdt .cell {
+  position: relative;
+  overflow: hidden;
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  color: var(--ink-faint);
+  background: rgba(35, 43, 62, 0.5);
+  border: 1px solid var(--grid);
+  font-variant-numeric: tabular-nums;
+  transition:
+    background 0.25s,
+    border-color 0.25s,
+    color 0.25s;
+}
+
+/* sender cell states */
+.rdt .cell.acked {
+  background: var(--data);
+  border-color: var(--data);
+  color: #10141c;
+  font-weight: 600;
+}
+
+.rdt .cell.out {
+  border-color: var(--data);
+  color: var(--data);
+}
+
+.rdt .cell.avail {
+  border-color: var(--ink-faint);
+}
+
+/* receiver cell states */
+.rdt .cell.got {
+  background: var(--data-head);
+  border-color: var(--data-head);
+  color: #10141c;
+  font-weight: 600;
+}
+
+.rdt .cell.expect {
+  border-color: var(--data-head);
+  color: var(--data-head);
+  box-shadow: 0 0 6px rgba(197, 234, 217, 0.35);
+}
+
+.rdt .cell.buf {
+  border-color: var(--data-head);
+  color: var(--data-head);
+  border-style: dashed;
+}
+
+.rdt .cell.flash-bad {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+.rdt .cell.flash-dup {
+  border-color: var(--ink-dim);
+  color: var(--ink-dim);
+}
+
+/* per-cell rto drain (selective repeat) */
+.rdt .cell-rto {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 0;
+  background: var(--warn);
+  opacity: 0.85;
+}
+
+/* window band + rto drain over the sender strip */
+.rdt .winband {
+  position: absolute;
+  top: 10px;
+  height: 32px;
+  border: 1px solid var(--data);
+  border-radius: 5px;
+  pointer-events: none;
+  transition:
+    left 0.3s,
+    width 0.3s;
+  box-shadow: 0 0 10px rgba(157, 191, 120, 0.12);
+  z-index: 1;
+}
+
+.rdt .winband.timeout {
+  border-color: var(--warn);
+  box-shadow: 0 0 14px rgba(229, 179, 94, 0.45);
+}
+
+.rdt .winband .tag {
+  position: absolute;
+  top: -11px;
+  left: -1px;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: var(--data);
+  text-transform: uppercase;
+  background: var(--panel);
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.rdt .winband.timeout .tag {
+  color: var(--warn);
+}
+
+/* two-column (alternating bit) mode: park the tag beside the narrow band */
+.rdt .winband.mono .tag {
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+}
+
+.rdt .rto-bar {
+  position: absolute;
+  bottom: -5px;
+  left: -1px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--warn);
+  opacity: 0.75;
+}
+
+.rdt .channel {
+  position: relative;
+  height: 320px;
+  overflow: hidden;
+}
+
+.rdt .lanes {
+  position: absolute;
+  inset: 0;
+}
+
+.rdt .chip {
+  position: absolute;
+  width: 24px;
+  height: 18px;
+  border-radius: 3px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  font-size: 9.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  will-change: transform;
+}
+
+.rdt .chip.data {
+  background: var(--data);
+  color: #10141c;
+  box-shadow: 0 0 8px rgba(157, 191, 120, 0.35);
+}
+
+.rdt .chip.ackc {
+  background: transparent;
+  color: var(--ackc);
+  border: 1px solid var(--ackc);
+  height: 16px;
+  font-weight: 400;
+}
+
+.rdt .chip.hurt {
+  background: var(--bad);
+  color: #10141c;
+  box-shadow: 0 0 8px rgba(224, 104, 90, 0.5);
+}
+
+.rdt .chip.hurt-ack {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+.rdt .chip.dead {
+  background: transparent;
+  border: 1px solid var(--bad);
+  color: var(--bad);
+  box-shadow: none;
+}
+
+.rdt .footcap {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--ink-faint);
+  font-size: 10.5px;
+  padding: 10px 12px 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.rdt .stage-msg {
+  border: 1px solid var(--bad);
+  border-radius: 6px;
+  color: var(--bad);
+  padding: 18px 16px;
+  font-size: 12px;
+}
+
+.rdt .stage-msg.quiet {
+  border-color: var(--panel-edge);
+  border-style: dashed;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 11px;
+  text-align: center;
+  padding: 44px 16px;
+}
+
+/* ---- log + legend --------------------------------------------------- */
+.rdt .below {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 14px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+@media (max-width: 860px) {
+  .rdt .below {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.rdt .card {
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+
+.rdt .card h2 {
+  margin: 0 0 12px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+}
+
+.rdt .log {
+  font-size: 11px;
+  display: grid;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+  min-height: 172px;
+  align-content: start;
+  overflow-x: auto;
+}
+
+.rdt .log-row {
+  display: grid;
+  grid-template-columns: 46px 34px 1fr;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.rdt .log-row .lt {
+  color: var(--ink-faint);
+}
+
+.rdt .log-row .who {
+  color: var(--ink-dim);
+}
+
+.rdt .log-row.snd .msg {
+  color: var(--data);
+}
+
+.rdt .log-row.ack .msg {
+  color: var(--ackc);
+}
+
+.rdt .log-row.bad .msg {
+  color: var(--bad);
+}
+
+.rdt .log-row.warn .msg {
+  color: var(--warn);
+}
+
+.rdt .log-row.good .msg {
+  color: var(--data-head);
+}
+
+.rdt .log-row.info .msg {
+  color: var(--ink-dim);
+}
+
+.rdt .legend {
+  display: grid;
+  gap: 10px;
+}
+
+.rdt .legend-row {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.rdt .legend-row .t {
+  font-size: 11px;
+  color: var(--ink-dim);
+}
+
+.rdt .legend-row .t b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.rdt .glyph {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rdt .glyph .cell,
+.rdt .glyph .chip {
+  position: static;
+  transition: none;
+}
+
+.rdt .rto-glyph {
+  display: block;
+  width: 40px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--warn);
+}
