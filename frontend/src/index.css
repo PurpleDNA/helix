@@ -59,6 +59,18 @@
   box-sizing: border-box;
 }
 
+/* pixel-art cursors: moss arrow everywhere, mint over anything clickable */
+html {
+  cursor: url('/cursors/arrow.png') 1 1, auto;
+}
+
+a,
+button,
+[role='button'],
+summary {
+  cursor: url('/cursors/pointer.png') 1 1, pointer;
+}
+
 body {
   margin: 0;
 }
