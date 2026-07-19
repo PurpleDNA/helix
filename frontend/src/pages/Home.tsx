@@ -95,6 +95,14 @@ export default function Home() {
       </section>
 
       <ProtocolsSection />
+
+      <footer className="landing-footer">
+        <div className="landing-brand">
+          <img src="/assets/helixx_logo.png" alt="" />
+          <span>helix</span>
+        </div>
+        <p>&copy; {new Date().getFullYear()} PurpleDNA</p>
+      </footer>
     </div>
   )
 }
