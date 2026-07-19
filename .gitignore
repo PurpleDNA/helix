@@ -19,3 +19,4 @@ venv/
 .DS_Store
 Thumbs.db
 uv.lock
+*Zone.Identifier

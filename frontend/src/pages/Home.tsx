@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import IntroTerminal from './IntroTerminal'
 import HeroHands from './HeroHands'
 import RotatingTagline from './RotatingTagline'
+import NetworkBackground from './NetworkBackground'
 import './home.css'
 
 const REPO_URL = 'https://github.com/PurpleDNA/helix'
@@ -77,6 +78,7 @@ export default function Home() {
       </header>
 
       <section className="hero-stage">
+        <NetworkBackground />
         <HeroHands play={revealed} />
         <div className="hero-copy">
           <h1>NETWORK PROTOCOL SIMULATOR</h1>
