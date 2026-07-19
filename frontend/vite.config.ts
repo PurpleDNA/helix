@@ -13,6 +13,6 @@ export default defineConfig({
         ws: true,
       },
     },
-    allowedHosts: ["unreliable-message.outray.app"],
+    allowedHosts: [".outray.app"],
   },
 });

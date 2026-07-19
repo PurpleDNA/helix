@@ -38,6 +38,7 @@ class SelectiveRepeat(Protocol):
         self.sim.emit(
         WINDOW_UPDATE,
         actor,
+        base=self.sender_base if actor == "sender" else self.receiver_base,
         nextseqnum=self.next_seq_num,
         size=self.window,
     )
@@ -111,6 +112,7 @@ class SelectiveRepeat(Protocol):
             self.received_ACKs.append(pkt.seq)
             return
         self._advance_sender_window()
+        self._emit_window("sender")
         self._drive()
     
     # -- receiver ----------------------------------------------------------

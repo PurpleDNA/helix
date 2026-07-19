@@ -29,15 +29,18 @@ class UnreliableChannel:
         self,
         payload: Any,
         on_deliver: Callable[[Any, bool], None],
-        label: str = "",
     ) -> None:
+        # Identify the in-flight packet so channel events are attributable:
+        # duck-typed because the engine can't import protocols.Packet.
+        seq = getattr(payload, "seq", None)
+        kind = "ack" if getattr(payload, "ack", False) else "data"
         rng = self.sim.rng
         if rng.random() < self.loss:
-            self.sim.emit(PACKET_DROPPED, "channel", label=label, reason="loss")
+            self.sim.emit(PACKET_DROPPED, "channel", seq=seq, kind=kind, reason="loss")
             return
 
         corrupted = rng.random() < self.corrupt
         if corrupted:
-            self.sim.emit(PACKET_CORRUPTED, "channel", label=label, reason="corruption")
+            self.sim.emit(PACKET_CORRUPTED, "channel", seq=seq, kind=kind, reason="corruption")
         delay = self.base_delay + rng.random() * self.jitter
         self.sim.schedule(delay, lambda: on_deliver(payload, corrupted))

@@ -1,7 +1,7 @@
 # --- data-plane movement ---------------------------------------------------
 PACKET_SENT = "PACKET_SENT"            # data={seq, payload?}
-PACKET_DROPPED = "PACKET_DROPPED"      # data={label, reason}  reason: "loss"
-PACKET_CORRUPTED = "PACKET_CORRUPTED"  # data={seq}
+PACKET_DROPPED = "PACKET_DROPPED"      # data={seq, kind, reason}  kind: "data"|"ack"
+PACKET_CORRUPTED = "PACKET_CORRUPTED"  # data={seq, kind, reason}  kind: "data"|"ack"
 PACKET_RECEIVED = "PACKET_RECEIVED" 
 PACKET_DISCARDED = "PACKET_DISCARDED"   # data={seq, corrupted}
 PACKET_BUFFERING = "PACKET_BUFFERING"
