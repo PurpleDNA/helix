@@ -228,7 +228,7 @@
   background: var(--helix-moss);
   border: none;
   border-radius: 0;
-  cursor: pointer;
+  cursor: url('/cursors/pointer.png') 1 1, pointer;
   box-shadow: 5px 5px 0 rgba(157, 191, 120, 0.3);
   transition:
     transform 0.12s ease,
@@ -243,33 +243,6 @@
 .hero-cta:active {
   transform: translate(3px, 3px);
   box-shadow: 1px 1px 0 rgba(157, 191, 120, 0.3);
-}
-
-.helix-transition {
-  height: 220vh;
-  position: relative;
-}
-
-.helix-sticky {
-  position: sticky;
-  top: 0;
-  height: 100dvh;
-  overflow: hidden;
-}
-
-.helix-sticky canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.next-stub {
-  min-height: 60vh;
-  display: grid;
-  place-items: center;
-  font-family: 'Geist Mono', ui-monospace, monospace;
-  font-size: 0.85rem;
-  color: rgba(214, 234, 233, 0.3);
 }
 
 /* staggered fade: once the intro starts leaving (.revealed), the copy

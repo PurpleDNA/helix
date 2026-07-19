@@ -4,6 +4,7 @@ import IntroTerminal from './IntroTerminal'
 import HeroHands from './HeroHands'
 import RotatingTagline from './RotatingTagline'
 import NetworkBackground from './NetworkBackground'
+import ProtocolsSection from './ProtocolsSection'
 import './home.css'
 
 const REPO_URL = 'https://github.com/PurpleDNA/helix'
@@ -30,7 +31,7 @@ export default function Home() {
   }, [])
 
   const scrollToNext = () => {
-    document.getElementById('what-is-helix')?.scrollIntoView({
+    document.getElementById('protocols')?.scrollIntoView({
       behavior: reducedMotion() ? 'auto' : 'smooth',
     })
   }
@@ -93,10 +94,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* landing spot for the CTA; the real section gets built next */}
-      <section id="what-is-helix" className="next-stub">
-        <p>// next section under construction</p>
-      </section>
+      <ProtocolsSection />
     </div>
   )
 }

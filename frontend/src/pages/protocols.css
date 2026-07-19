@@ -1,0 +1,705 @@
+/* Protocols section. Same stage as the hero (--helix-night), same pixel voice:
+   sharp corners, hard offset shadows, Geist Pixel headings, moss accent.
+   Everything that moves, moves on a diagonal: glyphs snap in from alternating
+   corners, cards converge from three directions, packets fly down-right and
+   ACKs fly down-left. */
+
+.protocols {
+  position: relative;
+  padding: clamp(5rem, 10vw, 8rem) clamp(1.25rem, 5vw, 3rem);
+  border-top: 1px solid rgba(214, 234, 233, 0.08);
+  background: var(--helix-night);
+  overflow: hidden;
+}
+
+.protocols-head,
+.pgrid {
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+/* ---------- header ---------- */
+
+.protocols-head h2 {
+  margin: 0;
+  font-family: 'Geist Pixel', monospace;
+  font-weight: 400;
+  font-size: clamp(2.1rem, 5.2vw, 4rem);
+  letter-spacing: 0.03em;
+  color: var(--helix-moss);
+  line-height: 1;
+}
+
+.protocols-head h2 span {
+  display: inline-block;
+}
+
+.protocols-sub {
+  margin: 1.1rem 0 0;
+  max-width: 34rem;
+  font-size: clamp(0.98rem, 1.6vw, 1.12rem);
+  line-height: 1.6;
+  color: rgba(214, 234, 233, 0.68);
+}
+
+/* ---------- grid: diagonal cascade, not three flat cards ---------- */
+
+.pgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+  align-items: start;
+}
+
+.pgrid > :nth-child(2) {
+  margin-top: 2.75rem;
+}
+
+.pgrid > :nth-child(3) {
+  margin-top: 5.5rem;
+}
+
+@media (max-width: 1023px) {
+  .pgrid {
+    grid-template-columns: 1fr;
+    max-width: 30rem;
+  }
+
+  .pgrid > :nth-child(2),
+  .pgrid > :nth-child(3) {
+    margin-top: 0;
+  }
+}
+
+/* ---------- card ---------- */
+
+.pcard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(214, 234, 233, 0.14);
+  background: linear-gradient(
+      160deg,
+      rgba(214, 234, 233, 0.055),
+      rgba(214, 234, 233, 0.015)
+    ),
+    var(--helix-night);
+  color: var(--helix-frost);
+  text-decoration: none;
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s ease,
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pcard:hover {
+  transform: translate(-4px, -4px);
+  border-color: rgba(157, 191, 120, 0.75);
+  box-shadow: 8px 8px 0 rgba(157, 191, 120, 0.22);
+}
+
+.pcard:active {
+  transform: translate(0, 0);
+  box-shadow: 2px 2px 0 rgba(157, 191, 120, 0.22);
+}
+
+/* targeting brackets on opposite corners: hidden until hover, then they
+   slide diagonally outward and lock on */
+.pcard::before,
+.pcard::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--helix-moss);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease;
+}
+
+.pcard::before {
+  top: -3px;
+  left: -3px;
+  border-right: none;
+  border-bottom: none;
+  transform: translate(8px, 8px);
+}
+
+.pcard::after {
+  bottom: -3px;
+  right: -3px;
+  border-left: none;
+  border-top: none;
+  transform: translate(-8px, -8px);
+}
+
+.pcard:hover::before,
+.pcard:hover::after {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+/* ---------- visual window ---------- */
+
+.pcard-visual {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(214, 234, 233, 0.1);
+  /* faint graph grid to hang the diagrams on */
+  background-image: linear-gradient(
+      rgba(214, 234, 233, 0.045) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(214, 234, 233, 0.045) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ---------- body + status ---------- */
+
+.pcard-body {
+  padding: 1.4rem 1.4rem 1rem;
+}
+
+.pcard-body h3 {
+  margin: 0;
+  font-family: 'Geist Pixel', monospace;
+  font-weight: 400;
+  font-size: 1.12rem;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  color: var(--helix-mint);
+}
+
+.pcard-body p {
+  margin: 0.7rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: rgba(214, 234, 233, 0.62);
+}
+
+.pcard-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: auto;
+  padding: 0.85rem 1.4rem;
+  border-top: 1px solid rgba(214, 234, 233, 0.08);
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+}
+
+.status {
+  color: rgba(214, 234, 233, 0.5);
+}
+
+.status.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--helix-moss);
+}
+
+.status.live i {
+  width: 7px;
+  height: 7px;
+  background: var(--helix-moss);
+}
+
+.pcard-go {
+  color: var(--helix-mint);
+}
+
+.pcard-go b {
+  display: inline-block;
+  font-weight: 400;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pcard:hover .pcard-go b {
+  transform: translateX(4px);
+}
+
+/* dimmed until it ships; hover lifts the fog */
+.is-soon {
+  opacity: 0.72;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s ease,
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.is-soon:hover {
+  opacity: 1;
+}
+
+/* ---------- RDT ladder diagram ---------- */
+
+.rdt-anim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.rdt-anim .node-line {
+  stroke: rgba(214, 234, 233, 0.28);
+  stroke-width: 1.5;
+}
+
+.rdt-anim .node-label {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  fill: rgba(214, 234, 233, 0.45);
+  text-anchor: middle;
+}
+
+.rdt-anim .pkt {
+  fill: var(--helix-moss);
+}
+
+.rdt-anim .ack {
+  fill: none;
+  stroke: var(--helix-mint);
+  stroke-width: 1.5;
+}
+
+.rdt-anim .loss-x line {
+  stroke: rgba(214, 234, 233, 0.7);
+  stroke-width: 1.5;
+}
+
+/* static frame: first packet waiting at the sender, everything else hidden */
+.rdt-anim .ack-a,
+.rdt-anim .pkt-lost,
+.rdt-anim .loss-x,
+.rdt-anim .pkt-b,
+.rdt-anim .ack-b {
+  opacity: 0;
+}
+
+/* ---------- traceroute map + route ---------- */
+
+.route-visual img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* retint the blue stock map into the moss/night duotone */
+  filter: grayscale(1) sepia(1) hue-rotate(55deg) saturate(1.7) brightness(0.7);
+  opacity: 0.85;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pcard:hover .route-visual img {
+  transform: scale(1.06);
+}
+
+.route-anim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.route-path {
+  fill: none;
+  stroke: var(--helix-mint);
+  stroke-width: 1.5;
+  stroke-dasharray: 0.018 0.022;
+  opacity: 0.75;
+}
+
+.route-anim .hop {
+  fill: var(--helix-night);
+  stroke: var(--helix-mint);
+  stroke-width: 1.5;
+}
+
+.route-packet {
+  fill: var(--helix-moss);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.pcard:hover .route-packet {
+  opacity: 1;
+}
+
+/* ---------- DNS terminal ---------- */
+
+.dns-visual {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.9rem;
+  padding: 1.4rem;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 0.85rem;
+}
+
+.dns-line {
+  margin: 0;
+  color: rgba(214, 234, 233, 0.75);
+}
+
+.dns-prompt {
+  color: var(--helix-moss);
+  margin-right: 0.5ch;
+}
+
+.dns-cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1em;
+  margin-left: 0.35ch;
+  vertical-align: text-bottom;
+  background: var(--helix-moss);
+}
+
+/* the answer types itself out on hover */
+.dns-reply {
+  margin: 0;
+  color: rgba(214, 234, 233, 0.5);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.7s steps(24);
+}
+
+.pcard:hover .dns-reply {
+  clip-path: inset(0 0 0 0);
+}
+
+/* ---------- motion (all of it) ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* PROTOCOLS glyphs: snap in from alternating corners, stepped like pixels */
+  .protocols-head h2 span {
+    opacity: 0;
+  }
+
+  .protocols-head h2 span:nth-child(odd) {
+    --dx: -16px;
+    --dy: -20px;
+  }
+
+  .protocols-head h2 span:nth-child(even) {
+    --dx: 16px;
+    --dy: 20px;
+  }
+
+  .in .protocols-head h2 span {
+    animation: glyph-in 0.32s steps(4) both;
+    animation-delay: calc(var(--i) * 42ms);
+  }
+
+  .protocols-sub {
+    opacity: 0;
+  }
+
+  .in .protocols-sub {
+    animation: sub-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.42s both;
+  }
+
+  /* cards converge from three corners */
+  .pgrid > * {
+    opacity: 0;
+  }
+
+  .in .pgrid > :nth-child(1) {
+    animation: card-in-left 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+  }
+
+  .in .pgrid > :nth-child(2) {
+    animation: card-in-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+  }
+
+  .in .pgrid > :nth-child(3) {
+    animation: card-in-right 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+  }
+
+  /* RDT story: send, ACK, lose one, retransmit, ACK. 6s loop while in view. */
+  .in .rdt-anim .pkt-a {
+    animation: rdt-pkt-a 6s linear infinite;
+  }
+
+  .in .rdt-anim .ack-a {
+    animation: rdt-ack-a 6s linear infinite;
+  }
+
+  .in .rdt-anim .pkt-lost {
+    animation: rdt-pkt-lost 6s linear infinite;
+  }
+
+  .in .rdt-anim .loss-x {
+    animation: rdt-loss-x 6s linear infinite;
+  }
+
+  .in .rdt-anim .pkt-b {
+    animation: rdt-pkt-b 6s linear infinite;
+  }
+
+  .in .rdt-anim .ack-b {
+    animation: rdt-ack-b 6s linear infinite;
+  }
+
+  /* dotted route crawls in travel direction while in view */
+  .in .route-path {
+    animation: route-flow 1.4s linear infinite;
+  }
+
+  .dns-cursor {
+    animation: cursor-blink 1.1s steps(1) infinite;
+  }
+
+  /* a lone packet orbits the card border on hover */
+  @supports (offset-path: border-box) {
+    .pcard-packet {
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      background: var(--helix-moss);
+      offset-path: border-box;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .pcard:hover .pcard-packet {
+      opacity: 1;
+      animation: packet-orbit 1.8s linear infinite;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pcard-packet,
+  .route-packet {
+    display: none;
+  }
+}
+
+@keyframes glyph-in {
+  from {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy));
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sub-in {
+  from {
+    opacity: 0;
+    transform: translate(-14px, 10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes card-in-left {
+  from {
+    opacity: 0;
+    transform: translate(-70px, 56px) rotate(-4deg) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes card-in-up {
+  from {
+    opacity: 0;
+    transform: translate(0, 84px) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes card-in-right {
+  from {
+    opacity: 0;
+    transform: translate(70px, 56px) rotate(4deg) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* sender → receiver is down-right; ACKs come back down-left */
+@keyframes rdt-pkt-a {
+  0% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+
+  13% {
+    transform: translate(144px, 16px);
+    opacity: 1;
+  }
+
+  15%,
+  100% {
+    transform: translate(144px, 16px);
+    opacity: 0;
+  }
+}
+
+@keyframes rdt-ack-a {
+  0%,
+  17% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  31% {
+    transform: translate(-144px, 16px);
+    opacity: 1;
+  }
+
+  33%,
+  100% {
+    transform: translate(-144px, 16px);
+    opacity: 0;
+  }
+}
+
+@keyframes rdt-pkt-lost {
+  0%,
+  37% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+
+  38% {
+    opacity: 1;
+  }
+
+  46% {
+    transform: translate(70px, 8px);
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    transform: translate(76px, 16px);
+    opacity: 0;
+  }
+}
+
+@keyframes rdt-loss-x {
+  0%,
+  47% {
+    opacity: 0;
+  }
+
+  51%,
+  56% {
+    opacity: 1;
+  }
+
+  61%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes rdt-pkt-b {
+  0%,
+  57% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+
+  58% {
+    opacity: 1;
+  }
+
+  71% {
+    transform: translate(144px, 16px);
+    opacity: 1;
+  }
+
+  73%,
+  100% {
+    transform: translate(144px, 16px);
+    opacity: 0;
+  }
+}
+
+@keyframes rdt-ack-b {
+  0%,
+  75% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+
+  76% {
+    opacity: 1;
+  }
+
+  89% {
+    transform: translate(-144px, 16px);
+    opacity: 1;
+  }
+
+  91%,
+  100% {
+    transform: translate(-144px, 16px);
+    opacity: 0;
+  }
+}
+
+@keyframes route-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+
+  to {
+    stroke-dashoffset: -0.04;
+  }
+}
+
+@keyframes cursor-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes packet-orbit {
+  from {
+    offset-distance: 0%;
+  }
+
+  to {
+    offset-distance: 100%;
+  }
+}
