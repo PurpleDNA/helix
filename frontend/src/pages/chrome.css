@@ -1,0 +1,193 @@
+/* Shared site chrome: the glass header + footer, used by the landing page
+   and the App layout that wraps the tool pages. */
+
+/* ---------- header ---------- */
+
+.landing-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 clamp(1rem, 4vw, 2.5rem);
+  background: rgba(39, 46, 66, 0.55);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border-bottom: 1px solid rgba(214, 234, 233, 0.08);
+  box-shadow: inset 0 1px 0 rgba(214, 234, 233, 0.06);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .landing-header {
+    background: var(--helix-night);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+.landing-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-decoration: none;
+}
+
+.landing-brand img {
+  height: 20px;
+  width: auto;
+  display: block;
+  /* source logo is dark teal, invisible on the dark header: lift it to frost */
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
+}
+
+.landing-brand span {
+  font-family: "Geist Pixel", monospace;
+  font-size: 1.4rem;
+  color: var(--helix-frost);
+  line-height: 1;
+}
+
+.landing-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.built-by {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: rgba(214, 234, 233, 0.85);
+  text-decoration: none;
+}
+
+.built-by:hover {
+  color: var(--helix-mint);
+}
+
+.built-by img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(157, 191, 120, 0.55);
+}
+
+.star-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(157, 191, 120, 0.4);
+  background: rgba(157, 191, 120, 0.08);
+  color: var(--helix-frost);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.star-pill:hover {
+  background: rgba(157, 191, 120, 0.18);
+}
+
+.star-pill svg {
+  width: 16px;
+  height: 16px;
+}
+
+.star-count {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 0.78rem;
+  color: var(--helix-mint);
+  border-left: 1px solid rgba(157, 191, 120, 0.4);
+  padding-left: 0.45rem;
+}
+
+@media (max-width: 640px) {
+  .built-by span {
+    display: none;
+  }
+}
+
+/* ---------- footer ---------- */
+
+.landing-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.4rem clamp(1rem, 4vw, 2.5rem);
+  background: rgba(39, 46, 66, 0.55);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border-top: 1px solid rgba(214, 234, 233, 0.08);
+  box-shadow: inset 0 1px 0 rgba(214, 234, 233, 0.06);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .landing-footer {
+    background: var(--helix-night);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+.landing-footer .landing-brand img {
+  height: 16px;
+}
+
+.landing-footer .landing-brand span {
+  font-size: 1.1rem;
+}
+
+.landing-footer p {
+  margin: 0;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: rgba(214, 234, 233, 0.5);
+}
+
+/* nav links inside the header (tool pages) */
+.landing-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.site-nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.site-nav a {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(214, 234, 233, 0.65);
+  text-decoration: none;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid transparent;
+}
+
+.site-nav a:hover {
+  color: var(--helix-mint);
+}
+
+.site-nav a[aria-current='page'] {
+  color: var(--helix-moss);
+  border-bottom-color: var(--helix-moss);
+}
+
+/* tool pages: content must clear the fixed header */
+.app {
+  padding-top: 64px;
+}

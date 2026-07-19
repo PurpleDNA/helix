@@ -1,19 +1,14 @@
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
+import { SiteHeader, SiteFooter } from './pages/SiteChrome'
 
 export default function App() {
   return (
     <div className="app">
-      <header className="app-header">
-        <Link to="/" className="brand">
-          Helix
-        </Link>
-        <nav>
-          <NavLink to="/rdt">Reliable Data Transfer</NavLink>
-        </nav>
-      </header>
+      <SiteHeader />
       <main className="app-main">
         <Outlet />
       </main>
+      <SiteFooter />
     </div>
   )
 }

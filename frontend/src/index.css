@@ -85,25 +85,6 @@ a {
   flex-direction: column;
 }
 
-.app-header {
-  display: flex;
-  align-items: baseline;
-  gap: 2rem;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.brand {
-  font-weight: 700;
-  font-size: 1.25rem;
-  text-decoration: none;
-}
-
-.app-header nav {
-  display: flex;
-  gap: 1.25rem;
-}
-
 .app-main {
   flex: 1;
   padding: 2rem;
