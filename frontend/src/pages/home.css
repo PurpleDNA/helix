@@ -140,7 +140,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.65;
+  opacity: 0.9;
   pointer-events: none;
 }
 
@@ -243,6 +243,24 @@
 .hero-cta:active {
   transform: translate(3px, 3px);
   box-shadow: 1px 1px 0 rgba(157, 191, 120, 0.3);
+}
+
+.helix-transition {
+  height: 220vh;
+  position: relative;
+}
+
+.helix-sticky {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.helix-sticky canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .next-stub {

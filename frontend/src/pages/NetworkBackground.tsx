@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react'
 // eases away from the cursor, opposite its direction.
 
 const LINK_DIST = 150
-const NODE_ALPHA = 0.55
+const NODE_ALPHA = 0.9
 const PARALLAX = 26 // max px the field shifts away from the cursor
 const PULSE_MS = 650
 const PULSE_EVERY_MS = 1100
@@ -66,7 +66,7 @@ export default function NetworkBackground() {
           const dy = a.y - b.y
           const d = Math.hypot(dx, dy)
           if (d < LINK_DIST) {
-            ctx.strokeStyle = `rgba(157, 191, 120, ${0.16 * (1 - d / LINK_DIST)})`
+            ctx.strokeStyle = `rgba(157, 191, 120, ${0.24 * (1 - d / LINK_DIST)})`
             ctx.lineWidth = 1
             ctx.beginPath()
             ctx.moveTo(a.x, a.y)
