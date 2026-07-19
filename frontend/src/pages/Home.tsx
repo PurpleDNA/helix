@@ -12,10 +12,20 @@ const REPO_URL = 'https://github.com/PurpleDNA/helix'
 const reducedMotion = () =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+// module scope: survives client-side route changes but resets on a full
+// page load, so the intro terminal only plays on fresh visits
+let introPlayed = false
+
 export default function Home() {
-  const [introMounted, setIntroMounted] = useState(() => !reducedMotion())
+  const [introMounted, setIntroMounted] = useState(
+    () => !reducedMotion() && !introPlayed,
+  )
   // flips as the terminal starts fading: cue for the hands' pixel dissolve
-  const [revealed, setRevealed] = useState(() => reducedMotion())
+  const [revealed, setRevealed] = useState(() => !introMounted)
+
+  useEffect(() => {
+    introPlayed = true
+  }, [])
 
   const handleLeaving = useCallback(() => setRevealed(true), [])
   const handleDone = useCallback(() => setIntroMounted(false), [])

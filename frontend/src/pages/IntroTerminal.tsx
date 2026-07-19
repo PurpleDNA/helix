@@ -10,54 +10,6 @@ type ScriptLine = {
   cls?: 'cmd' | 'bright'
 }
 
-/** 8-bit terminal noises, synthesized so no audio assets are needed.
- *  Browsers keep the context suspended until the user interacts with the
- *  page, so on a cold load these are silently skipped. */
-function createAudio() {
-  let ctx: AudioContext | null = null
-
-  const ensure = () => {
-    if (!ctx) {
-      try {
-        ctx = new AudioContext()
-      } catch {
-        return
-      }
-    }
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {})
-  }
-
-  const blip = (freq: number, dur: number, gain: number, at = 0) => {
-    if (!ctx || ctx.state !== 'running') return
-    const t = ctx.currentTime + at
-    const osc = ctx.createOscillator()
-    const g = ctx.createGain()
-    osc.type = 'square'
-    osc.frequency.value = freq
-    g.gain.setValueAtTime(gain, t)
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
-    osc.connect(g).connect(ctx.destination)
-    osc.start(t)
-    osc.stop(t + dur)
-  }
-
-  return {
-    ensure,
-    /** keystroke while the command types */
-    tick: () => blip(1500 + Math.random() * 600, 0.018, 0.012),
-    /** a line hitting the screen */
-    line: () => blip(510, 0.025, 0.018),
-    bright: () => blip(690, 0.03, 0.022),
-    /** scan finished: little rising chirp */
-    done: () => {
-      blip(660, 0.07, 0.028)
-      blip(880, 0.07, 0.028, 0.09)
-      blip(1174, 0.1, 0.028, 0.18)
-    },
-    close: () => ctx?.close().catch(() => {}),
-  }
-}
-
 function timestamp() {
   const d = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -106,9 +58,11 @@ const SCRIPT: ScriptLine[] = [
   },
 ]
 
-const TYPE_SPEED = 11
-const HOLD_AFTER = 450
+const TYPE_SPEED = 8
+const HOLD_AFTER = 300
 const FADE_MS = 550
+/** scales every script delay; 0.65 shaves roughly a second off the run */
+const PACE = 0.65
 
 export default function IntroTerminal({
   onLeaving,
@@ -127,13 +81,10 @@ export default function IntroTerminal({
 
   useEffect(() => {
     let line = 0
-    const audio = createAudio()
-    audio.ensure()
 
     const finish = () => {
       if (finished.current) return
       finished.current = true
-      audio.done()
       setLeaving(true)
       onLeaving()
       timer.current = window.setTimeout(onDone, FADE_MS)
@@ -150,7 +101,6 @@ export default function IntroTerminal({
           let c = 0
           const typeChar = () => {
             c++
-            audio.tick()
             setPartial(s.text.slice(0, c))
             if (c < s.text.length) {
               timer.current = window.setTimeout(typeChar, TYPE_SPEED)
@@ -163,22 +113,15 @@ export default function IntroTerminal({
           }
           typeChar()
         } else {
-          if (s.text) {
-            if (s.cls === 'bright') audio.bright()
-            else audio.line()
-          }
           line++
           setLineCount(line)
           step()
         }
-      }, s.delay)
+      }, Math.round(s.delay * PACE))
     }
 
     const skip = () => {
       window.clearTimeout(timer.current)
-      // the skip gesture is also what unlocks audio on a cold load,
-      // so at least the finish chirp gets heard
-      audio.ensure()
       setPartial(null)
       setLineCount(SCRIPT.length)
       finish()
@@ -192,7 +135,6 @@ export default function IntroTerminal({
       window.clearTimeout(timer.current)
       window.removeEventListener('keydown', skip)
       window.removeEventListener('pointerdown', skip)
-      audio.close()
     }
   }, [onLeaving, onDone])
 
