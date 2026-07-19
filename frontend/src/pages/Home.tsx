@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import IntroTerminal from './IntroTerminal'
 import HeroHands from './HeroHands'
+import RotatingTagline from './RotatingTagline'
 import './home.css'
 
 const REPO_URL = 'https://github.com/PurpleDNA/helix'
@@ -16,6 +17,22 @@ export default function Home() {
 
   const handleLeaving = useCallback(() => setRevealed(true), [])
   const handleDone = useCallback(() => setIntroMounted(false), [])
+
+  const [stars, setStars] = useState<number | null>(null)
+  useEffect(() => {
+    fetch('https://api.github.com/repos/PurpleDNA/helix')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (typeof d?.stargazers_count === 'number') setStars(d.stargazers_count)
+      })
+      .catch(() => {}) // no count shown; the pill still links out
+  }, [])
+
+  const scrollToNext = () => {
+    document.getElementById('what-is-helix')?.scrollIntoView({
+      behavior: reducedMotion() ? 'auto' : 'smooth',
+    })
+  }
 
   return (
     <div className={revealed ? 'landing revealed' : 'landing'}>
@@ -38,15 +55,23 @@ export default function Home() {
             <span>built by PurpleDNA</span>
           </a>
           <a
-            className="repo-link"
+            className="star-pill"
             href={REPO_URL}
             target="_blank"
             rel="noreferrer"
-            aria-label="Helix on GitHub"
+            aria-label="Star helix on GitHub"
           >
             <svg aria-hidden="true">
               <use href="/icons.svg#github-icon" />
             </svg>
+            <span>Star</span>
+            {stars !== null && (
+              <span className="star-count">
+                {new Intl.NumberFormat('en', { notation: 'compact' }).format(
+                  stars,
+                )}
+              </span>
+            )}
           </a>
         </div>
       </header>
@@ -55,12 +80,20 @@ export default function Home() {
         <HeroHands play={revealed} />
         <div className="hero-copy">
           <h1>NETWORK PROTOCOL SIMULATOR</h1>
-          <p className="hero-sub">Watch network protocols in action</p>
+          <RotatingTagline active={revealed} />
           <p className="hero-quote">
             &ldquo;Tell me and I forget. Show me and I remember. Involve me and
             I understand.&rdquo;
           </p>
+          <button className="hero-cta" onClick={scrollToNext}>
+            GET STARTED
+          </button>
         </div>
+      </section>
+
+      {/* landing spot for the CTA; the real section gets built next */}
+      <section id="what-is-helix" className="next-stub">
+        <p>// next section under construction</p>
       </section>
     </div>
   )
