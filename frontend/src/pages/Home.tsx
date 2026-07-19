@@ -18,7 +18,7 @@ export default function Home() {
   const handleDone = useCallback(() => setIntroMounted(false), [])
 
   return (
-    <div className="landing">
+    <div className={revealed ? 'landing revealed' : 'landing'}>
       {introMounted && (
         <IntroTerminal onLeaving={handleLeaving} onDone={handleDone} />
       )}
