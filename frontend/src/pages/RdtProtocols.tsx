@@ -28,9 +28,18 @@ const DEFAULTS: RunParams = {
   rto: 12,
 }
 
+// Where the backend lives. In production, VITE_WS_URL points at the deployed
+// FastAPI service (e.g. wss://api.purplehelix.lol). In dev it's unset, so we
+// fall back to the same origin, where Vite's proxy forwards /ws to localhost.
+function wsBase(): string {
+  const configured = import.meta.env.VITE_WS_URL
+  if (configured) return configured.replace(/\/$/, '')
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws'
+  return `${proto}://${location.host}`
+}
+
 function fetchTimeline(params: RunParams, signal: { ws?: WebSocket }) {
   return new Promise<RawEvent[]>((resolve, reject) => {
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws'
     const qs = new URLSearchParams({
       protocol: params.protocol,
       n_messages: String(params.nMessages),
@@ -42,7 +51,7 @@ function fetchTimeline(params: RunParams, signal: { ws?: WebSocket }) {
       // still shows a different unlucky channel.
       seed: String(Math.floor(Math.random() * 100000)),
     })
-    const ws = new WebSocket(`${proto}://${location.host}/ws/rdt-protocols/?${qs}`)
+    const ws = new WebSocket(`${wsBase()}/ws/rdt-protocols/?${qs}`)
     signal.ws = ws
     const events: RawEvent[] = []
     ws.onmessage = (m) => {
