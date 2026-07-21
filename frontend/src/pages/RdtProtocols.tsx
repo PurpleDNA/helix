@@ -7,6 +7,7 @@ import {
   type RunParams,
   type StageDom,
 } from './rdtStage'
+import RdtCourse from './RdtCourse'
 import './rdt.css'
 
 const PROTOCOLS: { id: ProtocolId; label: string }[] = [
@@ -171,6 +172,25 @@ export default function RdtProtocols() {
     setRunId(0)
   }
 
+  // Course sections hand over a ready-made run: reflect it into the form,
+  // launch it, and bring the instrument back into view.
+  const runScenario = (params: RunParams) => {
+    setProtocol(params.protocol)
+    setFields((f) => ({
+      nMessages: String(params.nMessages),
+      loss: String(Math.round(params.loss * 100)),
+      corrupt: String(Math.round(params.corrupt * 100)),
+      window: params.protocol === 'stop_and_wait' ? f.window : String(params.window),
+      rto: String(params.rto),
+    }))
+    setSubmitted(params)
+    setRunId((i) => i + 1)
+    document.getElementById('instrument')?.scrollIntoView({
+      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    })
+  }
+
   const pickProtocol = (id: ProtocolId) => {
     if (id === protocol) return
     setProtocol(id)
@@ -268,7 +288,7 @@ export default function RdtProtocols() {
         )}
       </form>
 
-      <div className="rdt-panel">
+      <div className="rdt-panel" id="instrument">
         <div className="readouts">
           <span className="readout">
             <span className="k">protocol</span>
@@ -324,6 +344,9 @@ export default function RdtProtocols() {
         ) : status === 'idle' ? (
           <div className="stage-msg quiet">
             instrument idle — set the channel conditions above, then press run
+            <a className="idle-course-link" href="#course">
+              new to all this? read the crash course below
+            </a>
           </div>
         ) : (
           <div className="stage-frame" data-loading={status === 'loading' || undefined}>
@@ -453,6 +476,8 @@ export default function RdtProtocols() {
           </aside>
         </div>
       </div>
+
+      <RdtCourse onScenario={runScenario} />
     </div>
   )
 }
