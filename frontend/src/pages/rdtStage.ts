@@ -79,6 +79,13 @@ export function buildRun(events: RawEvent[], params: RunParams): Run {
   let openSingle: { t0: number; seq: number } | null = null
   const openPerSeq = new Map<number, number>()
   let sawWindowUpdates = false
+  // The engine collapses each ACK→slide→resend cascade onto one timestamp, but
+  // the stage re-spreads chips over their reconstructed arrival times. A
+  // WINDOW_UPDATE always trails its cause (the ACK that advanced base, or the
+  // send that bumped next), so anchor it to that cause's reconstructed time
+  // instead of the raw engine tick — otherwise the band teleports to its end
+  // state while the acks that justify it are still visibly in flight.
+  let lastCauseTr = 0
 
   const staggered = (t: number) => {
     const key = 's@' + t
@@ -110,6 +117,7 @@ export function buildRun(events: RawEvent[], params: RunParams): Run {
 
     if (e.type === 'PACKET_SENT') {
       const t0 = staggered(e.t)
+      lastCauseTr = t0
       const fate: Fate =
         chNext && chNext.kind === 'data' && chNext.seq === d.seq
           ? chNext.reason === 'loss'
@@ -180,6 +188,7 @@ export function buildRun(events: RawEvent[], params: RunParams): Run {
     } else if (e.actor === 'sender' && (e.type === 'ACK_RECEIVED' || e.type === 'PACKET_DISCARDED')) {
       const f = ackQ.shift()
       const tr = f ? f.t0 + 1 : e.t
+      lastCauseTr = tr
       if (e.type === 'ACK_RECEIVED') {
         shows.push({ t: tr, kind: 'ackmark', seq: d.seq })
         shows.push({ t: tr, kind: 'log', cls: 'ack', who: 'SND', msg: `ack in seq=${bit(d.seq)}` })
@@ -212,7 +221,7 @@ export function buildRun(events: RawEvent[], params: RunParams): Run {
       closeTimer(seqOf(d), e.t, false)
     } else if (e.type === 'WINDOW_UPDATE' && e.actor === 'sender') {
       sawWindowUpdates = true
-      shows.push({ t: e.t, kind: 'win', base: d.base, next: d.nextseqnum })
+      shows.push({ t: lastCauseTr, kind: 'win', base: d.base, next: d.nextseqnum })
     }
   }
 
