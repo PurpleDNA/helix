@@ -390,6 +390,18 @@
   background: none;
 }
 
+/* receiver window band (selective repeat): receiver colour, tag below */
+.rdt .winband.recv {
+  border-color: var(--data-head);
+  box-shadow: 0 0 10px rgba(197, 234, 217, 0.12);
+}
+
+.rdt .winband.recv .tag {
+  top: auto;
+  bottom: -11px;
+  color: var(--data-head);
+}
+
 .rdt .rto-bar {
   position: absolute;
   bottom: -5px;

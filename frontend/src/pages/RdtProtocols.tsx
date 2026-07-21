@@ -336,6 +336,11 @@ export default function RdtProtocols() {
                 </div>
                 <div className="strip">
                   <span className="who">Receiver</span>
+                  <div className="winband recv" ref={grab('rwinband')}>
+                    <span className="tag" ref={grab('rwintag')}>
+                      accept
+                    </span>
+                  </div>
                   <div className="cells" ref={grab('recvCells')} />
                 </div>
               </div>

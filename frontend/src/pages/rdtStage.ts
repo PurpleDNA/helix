@@ -416,6 +416,8 @@ export interface StageDom {
   lanes: HTMLElement
   winband: HTMLElement
   wintag: HTMLElement
+  rwinband: HTMLElement
+  rwintag: HTMLElement
   rtoBar: HTMLElement
   clock: HTMLElement
   prog: HTMLElement
@@ -461,6 +463,7 @@ export class StagePlayer {
   private showPtr = 0
   private spawnPtr = 0
   private win = { base: 0, next: 0 }
+  private rwin = { base: 0 }
   private acked = new Set<number>()
   private delivered = new Set<number>()
   private buffered = new Set<number>()
@@ -491,6 +494,8 @@ export class StagePlayer {
 
     dom.stage.style.width = `${this.cols * CELL - 3 + PAD * 2}px`
     dom.winband.classList.toggle('mono', this.twoCol)
+    // Only Selective Repeat has a distinct receiver window worth drawing.
+    dom.rwinband.style.display = this.perSeqTimers ? '' : 'none'
     dom.sendCells.innerHTML = ''
     dom.recvCells.innerHTML = ''
     dom.lanes.innerHTML = ''
@@ -554,6 +559,7 @@ export class StagePlayer {
     this.spawnPtr = 0
     this.boostTarget = null
     this.win = { base: 0, next: 0 }
+    this.rwin = { base: 0 }
     this.acked.clear()
     this.delivered.clear()
     this.buffered.clear()
@@ -637,6 +643,7 @@ export class StagePlayer {
         if (this.cumulative) for (let q = 0; q <= s.seq; q++) this.acked.add(q)
         else this.acked.add(s.seq)
       } else if (s.kind === 'win') this.win = { base: s.base, next: s.next }
+      else if (s.kind === 'rwin') this.rwin = { base: s.base }
       else if (s.kind === 'timer') this.activeTimers.push({ seq: s.seq, t0: s.t, t1: s.t1, fired: s.fired })
     }
     this.activeTimers = this.activeTimers.filter((tm) => T <= tm.t1 + 0.6)
@@ -774,6 +781,14 @@ export class StagePlayer {
       : this.twoCol
         ? `msg ${Math.min(base, this.n - 1)} · bit ${base % 2}`
         : `window ${base}–${Math.min(base + winSize, this.n) - 1}`
+
+    /* receiver window band (selective repeat) */
+    if (this.perSeqTimers) {
+      const rbase = this.rwin.base
+      dom.rwinband.style.left = colX(rbase) - 3 + 'px'
+      dom.rwinband.style.width = Math.min(winSize, this.n - rbase) * CELL + 3 + 'px'
+      dom.rwintag.textContent = `accept ${rbase}–${Math.min(rbase + winSize, this.n) - 1}`
+    }
 
     /* auto-pan unless the user recently took over */
     if (now > this.userPanUntil) {
