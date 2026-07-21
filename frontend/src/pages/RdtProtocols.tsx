@@ -59,8 +59,22 @@ function fetchTimeline(params: RunParams, signal: { ws?: WebSocket }) {
   })
 }
 
+type FieldKey = 'nMessages' | 'loss' | 'corrupt' | 'window' | 'rto'
+
+const clamp = (n: number, lo: number, hi: number, fallback: number) =>
+  Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : fallback
+
 export default function RdtProtocols() {
-  const [form, setForm] = useState<RunParams>(DEFAULTS)
+  const [protocol, setProtocol] = useState<ProtocolId>(DEFAULTS.protocol)
+  // Inputs are free-typed text (digits only) so clearing a field never
+  // snaps to 0; values are parsed and clamped once, at Run.
+  const [fields, setFields] = useState<Record<FieldKey, string>>({
+    nMessages: '20',
+    loss: '20',
+    corrupt: '10',
+    window: '5',
+    rto: '12',
+  })
   const [submitted, setSubmitted] = useState<RunParams>(DEFAULTS)
   const [runId, setRunId] = useState(0)
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
@@ -112,16 +126,32 @@ export default function RdtProtocols() {
     }
   }, [submitted, runId])
 
-  const set = <K extends keyof RunParams>(key: K, value: RunParams[K]) =>
-    setForm((f) => ({ ...f, [key]: value }))
+  const setField = (key: FieldKey, raw: string) =>
+    setFields((f) => ({ ...f, [key]: raw.replace(key === 'rto' ? /[^\d.]/g : /[^\d]/g, '') }))
 
-  const maxWindow = form.protocol === 'selective_repeat' ? Math.max(1, Math.floor(form.nMessages / 2)) : 15
-  const windowClamped = Math.min(form.window, maxWindow)
+  const nMessages = clamp(parseInt(fields.nMessages, 10), 5, 50, DEFAULTS.nMessages)
+  const maxWindow = protocol === 'selective_repeat' ? Math.max(1, Math.floor(nMessages / 2)) : 15
+  const parsed: RunParams = {
+    protocol,
+    nMessages,
+    loss: clamp(parseInt(fields.loss, 10), 0, 70, DEFAULTS.loss * 100) / 100,
+    corrupt: clamp(parseInt(fields.corrupt, 10), 0, 70, DEFAULTS.corrupt * 100) / 100,
+    // Stop-and-wait is window=1 by definition.
+    window:
+      protocol === 'stop_and_wait' ? 1 : clamp(parseInt(fields.window, 10), 1, maxWindow, DEFAULTS.window),
+    rto: clamp(parseFloat(fields.rto), 4, 40, DEFAULTS.rto),
+  }
 
   const launch = () => {
-    // Stop-and-wait is window=1 by definition; keep params honest so the
-    // stage band and register agree with the protocol.
-    setSubmitted({ ...form, window: form.protocol === 'stop_and_wait' ? 1 : windowClamped })
+    // Reflect what actually runs back into the inputs (clamps, blanks).
+    setFields((f) => ({
+      nMessages: String(parsed.nMessages),
+      loss: String(Math.round(parsed.loss * 100)),
+      corrupt: String(Math.round(parsed.corrupt * 100)),
+      window: protocol === 'stop_and_wait' ? f.window : String(parsed.window),
+      rto: String(parsed.rto),
+    }))
+    setSubmitted(parsed)
     setRunId((i) => i + 1)
   }
 
@@ -142,7 +172,7 @@ export default function RdtProtocols() {
   }
 
   // Readouts/legend describe the running sim, or the form while idle.
-  const active = runId === 0 ? { ...form, window: windowClamped } : submitted
+  const active = runId === 0 ? parsed : submitted
   const isSR = active.protocol === 'selective_repeat'
 
   return (
@@ -169,9 +199,9 @@ export default function RdtProtocols() {
               key={p.id}
               type="button"
               role="radio"
-              aria-checked={form.protocol === p.id}
-              className={form.protocol === p.id ? 'on' : ''}
-              onClick={() => set('protocol', p.id)}
+              aria-checked={protocol === p.id}
+              className={protocol === p.id ? 'on' : ''}
+              onClick={() => setProtocol(p.id)}
             >
               {p.label}
             </button>
@@ -181,60 +211,49 @@ export default function RdtProtocols() {
           <label>
             <span>messages</span>
             <input
-              type="number"
-              min={5}
-              max={50}
-              value={form.nMessages}
-              onChange={(e) => set('nMessages', Number(e.target.value))}
+              inputMode="numeric"
+              value={fields.nMessages}
+              onChange={(e) => setField('nMessages', e.target.value)}
             />
           </label>
           <label>
             <span>loss %</span>
             <input
-              type="number"
-              min={0}
-              max={70}
-              value={Math.round(form.loss * 100)}
-              onChange={(e) => set('loss', Number(e.target.value) / 100)}
+              inputMode="numeric"
+              value={fields.loss}
+              onChange={(e) => setField('loss', e.target.value)}
             />
           </label>
           <label>
             <span>corrupt %</span>
             <input
-              type="number"
-              min={0}
-              max={70}
-              value={Math.round(form.corrupt * 100)}
-              onChange={(e) => set('corrupt', Number(e.target.value) / 100)}
+              inputMode="numeric"
+              value={fields.corrupt}
+              onChange={(e) => setField('corrupt', e.target.value)}
             />
           </label>
           <label>
             <span>window</span>
             <input
-              type="number"
-              min={1}
-              max={maxWindow}
-              value={form.protocol === 'stop_and_wait' ? 1 : windowClamped}
-              disabled={form.protocol === 'stop_and_wait'}
-              onChange={(e) => set('window', Number(e.target.value))}
+              inputMode="numeric"
+              value={protocol === 'stop_and_wait' ? '1' : fields.window}
+              disabled={protocol === 'stop_and_wait'}
+              onChange={(e) => setField('window', e.target.value)}
             />
           </label>
-          <label>
-            <span>rto</span>
+          <label title="how long the sender waits before resending (the retransmission timeout), in simulated seconds">
+            <span>timeout (s)</span>
             <input
-              type="number"
-              min={4}
-              max={40}
-              step={0.5}
-              value={form.rto}
-              onChange={(e) => set('rto', Number(e.target.value))}
+              inputMode="decimal"
+              value={fields.rto}
+              onChange={(e) => setField('rto', e.target.value)}
             />
           </label>
           <button type="submit" className="btn primary">
             Run
           </button>
         </div>
-        {form.protocol === 'selective_repeat' && (
+        {protocol === 'selective_repeat' && (
           <p className="form-hint">
             selective repeat needs window ≤ half the sequence space (≤ {maxWindow} here)
           </p>
@@ -251,9 +270,9 @@ export default function RdtProtocols() {
             <span className="k">win</span>
             <span className="v">{active.protocol === 'stop_and_wait' ? 1 : active.window}</span>
           </span>
-          <span className="readout">
-            <span className="k">rto</span>
-            <span className="v">{active.rto}</span>
+          <span className="readout" title="retransmission timeout, in simulated seconds">
+            <span className="k">timeout</span>
+            <span className="v">{active.rto}s</span>
           </span>
           <span className="readout">
             <span className="k">loss</span>
@@ -343,7 +362,7 @@ export default function RdtProtocols() {
                   <span className="chip data">7</span>
                 </span>
                 <span className="t">
-                  <b>data packet</b> carrying its seq, falling
+                  <b>data packet</b>
                 </span>
               </div>
               <div className="legend-row">
@@ -351,7 +370,7 @@ export default function RdtProtocols() {
                   <span className="chip ackc">7</span>
                 </span>
                 <span className="t">
-                  <b>ack</b> rising home in its column
+                  <b>ack</b>
                 </span>
               </div>
               <div className="legend-row">
@@ -359,7 +378,7 @@ export default function RdtProtocols() {
                   <span className="chip dead">✕</span>
                 </span>
                 <span className="t">
-                  <b>lost</b> — dies mid-channel, fades
+                  <b>lost</b>
                 </span>
               </div>
               <div className="legend-row">
@@ -367,7 +386,7 @@ export default function RdtProtocols() {
                   <span className="chip hurt">7</span>
                 </span>
                 <span className="t">
-                  <b>corrupted</b> — arrives damaged, gets discarded
+                  <b>corrupted</b>
                 </span>
               </div>
               <div className="legend-row">
@@ -376,7 +395,7 @@ export default function RdtProtocols() {
                   <span className="cell out">7</span>
                 </span>
                 <span className="t">
-                  sender: <b>acked</b> / <b>outstanding</b> in window
+                  sender: <b>acked</b> / <b>outstanding</b>
                 </span>
               </div>
               <div className="legend-row">
@@ -385,7 +404,7 @@ export default function RdtProtocols() {
                   <span className="cell expect">4</span>
                 </span>
                 <span className="t">
-                  receiver: <b>delivered</b> / <b>expected next</b>
+                  receiver: <b>delivered</b> / <b>expected</b>
                 </span>
               </div>
               {active.protocol === 'stop_and_wait' && (
@@ -395,8 +414,7 @@ export default function RdtProtocols() {
                     <span className="chip data">1</span>
                   </span>
                   <span className="t">
-                    <b>alternating bit</b> — the header carries seq mod 2; the column shows which
-                    message
+                    <b>alternating bit</b>
                   </span>
                 </div>
               )}
@@ -406,7 +424,7 @@ export default function RdtProtocols() {
                     <span className="cell buf">6</span>
                   </span>
                   <span className="t">
-                    receiver: <b>buffered</b> — held until the gap fills
+                    receiver: <b>buffered</b>
                   </span>
                 </div>
               )}
@@ -415,8 +433,7 @@ export default function RdtProtocols() {
                   <span className="rto-glyph" />
                 </span>
                 <span className="t">
-                  <b>rto draining</b> {isSR ? 'inside each outstanding cell' : 'under the window'} —
-                  empty = timeout
+                  <b>resend timer</b> — resends when empty
                 </span>
               </div>
             </div>
