@@ -171,6 +171,14 @@ export default function RdtProtocols() {
     setRunId(0)
   }
 
+  const pickProtocol = (id: ProtocolId) => {
+    if (id === protocol) return
+    setProtocol(id)
+    // A run in flight belongs to the old protocol; switching type abandons it
+    // (same as Stop) so a stale loop can't keep playing under the new pick.
+    stop()
+  }
+
   // Readouts/legend describe the running sim, or the form while idle.
   const active = runId === 0 ? parsed : submitted
   const isSR = active.protocol === 'selective_repeat'
@@ -201,7 +209,7 @@ export default function RdtProtocols() {
               role="radio"
               aria-checked={protocol === p.id}
               className={protocol === p.id ? 'on' : ''}
-              onClick={() => setProtocol(p.id)}
+              onClick={() => pickProtocol(p.id)}
             >
               {p.label}
             </button>
