@@ -45,6 +45,7 @@ type Show =
   | { t: number; kind: 'sflash'; seq: number }
   | { t: number; kind: 'ackmark'; seq: number }
   | { t: number; kind: 'win'; base: number; next: number }
+  | { t: number; kind: 'rwin'; base: number }
   | { t: number; kind: 'timer'; seq: number; t1: number; fired: boolean }
 
 export interface Run {
@@ -62,8 +63,15 @@ const deathFrac = (seq: number, t0: number) =>
   0.35 + (((seq * 37 + Math.round(t0 * 8)) % 23) / 23) * 0.3
 
 export function buildRun(events: RawEvent[], params: RunParams): Run {
+  // Selective Repeat breaks every assumption the shared reconstruction makes
+  // (acks emitted before deliveries, retransmitted seqs, buffer-then-drain,
+  // below-base re-ACKs), so it gets its own causal, per-seq pass.
+  if (params.protocol === 'selective_repeat') return buildRunSR(events, params)
+
   const { protocol } = params
-  const perSeqTimers = protocol === 'selective_repeat'
+  // Selective Repeat (the only per-seq-timer protocol) returned above, so the
+  // shared path is single-timer: GBN and stop-and-wait.
+  const perSeqTimers = false
   // Stop-and-wait is the alternating-bit protocol: the header carries one bit.
   const bit = (s: number) => (protocol === 'stop_and_wait' ? s % 2 : s)
 
@@ -237,6 +245,165 @@ export function buildRun(events: RawEvent[], params: RunParams): Run {
   function seqOf(d: Record<string, any>): number {
     return typeof d.seq === 'number' ? d.seq : -1
   }
+}
+
+// Selective Repeat reconstruction. The engine runs all protocol logic at zero
+// cost, so an ack, its window slide, and the resend it triggers all share one
+// tick; only the channel adds the 1-tick hop. We rebuild real animation times
+// by threading each effect back to the packet that caused it, per seq:
+//   * a data chip launches at its (staggered) send time and lands 1 tick later;
+//   * the ACK it triggers launches at that landing and lands 1 tick after that;
+//   * the sender's reaction (ackmark, window slide, next send) rides that ack's
+//     landing. FIFO-per-seq queues carry those landing times forward, so a
+//     retransmitted seq, a buffered-then-drained packet, or a lost ack never
+//     smears onto an unrelated flight the way the global heuristics did.
+function buildRunSR(events: RawEvent[], params: RunParams): Run {
+  const flights: Flight[] = []
+  const shows: Show[] = []
+  // FIFO landing times per seq: when the k-th surviving flight of a seq lands.
+  const dataLand = new Map<number, number[]>()
+  const ackLand = new Map<number, number[]>()
+  const push = (m: Map<number, number[]>, seq: number, t: number) => {
+    const q = m.get(seq)
+    if (q) q.push(t)
+    else m.set(seq, [t])
+  }
+  const pop = (m: Map<number, number[]>, seq: number): number | undefined => m.get(seq)?.shift()
+
+  let burstKey = ''
+  let burstIdx = 0
+  const staggered = (t: number) => {
+    const key = 's@' + t
+    if (key !== burstKey) {
+      burstKey = key
+      burstIdx = 0
+    }
+    return t + burstIdx++ * EPS
+  }
+
+  const openPerSeq = new Map<number, number>()
+  const closeTimer = (seq: number, t1: number, fired: boolean) => {
+    const t0 = openPerSeq.get(seq)
+    if (t0 !== undefined) {
+      openPerSeq.delete(seq)
+      shows.push({ t: t0, kind: 'timer', seq, t1, fired })
+    }
+  }
+
+  let lastCauseTr = 0 // reconstructed time of the last sender-side cause
+  // Ack-landing times and send-stagger times are two sub-tick clocks that both
+  // map onto one engine tick; interleaved, they can fall out of engine order
+  // and make the window base appear to slide backward. A monotonic cursor keeps
+  // every sender-side reconstructed time non-decreasing in engine order.
+  let senderCursor = 0
+  let lastRecvTr = 0 // reconstructed time of the last receiver-side arrival
+  let curArrT = 0 // arrival time of the packet the current recv_data is handling
+  let curArrSeq = -1
+  let pendBufSeq = -1 // a BUFFERING whose paired ACK_SENT hasn't been seen yet
+  let pendBufT = 0
+
+  const fateOf = (kind: 'data' | 'ack', seq: number, chNext: Record<string, any> | null): Fate =>
+    chNext && chNext.kind === kind && chNext.seq === seq
+      ? chNext.reason === 'loss'
+        ? 'dropped'
+        : 'corrupt'
+      : 'ok'
+
+  // Receiver window opens at [0, window) before any delivery lands.
+  shows.push({ t: 0, kind: 'rwin', base: 0 })
+
+  for (let i = 0; i < events.length; i++) {
+    const e = events[i]
+    const d = e.data
+    const next = events[i + 1]
+    const chNext = next && next.actor === 'channel' ? next.data : null
+    const seq: number = typeof d.seq === 'number' ? d.seq : -1
+
+    if (e.type === 'PACKET_SENT') {
+      const t0 = Math.max(staggered(e.t), senderCursor)
+      senderCursor = t0
+      lastCauseTr = t0
+      const fate = fateOf('data', seq, chNext)
+      const f: Flight = { kind: 'data', seq, label: seq, t0, fate }
+      flights.push(f)
+      if (fate !== 'dropped') push(dataLand, seq, t0 + 1)
+      shows.push({ t: t0, kind: 'log', cls: 'snd', who: 'SND', msg: `DATA ▾ seq=${seq}` })
+      if (fate === 'dropped')
+        shows.push({ t: t0 + deathFrac(seq, t0), kind: 'log', cls: 'bad', who: 'CHN', msg: `LOST data seq=${seq}` })
+      if (fate === 'corrupt')
+        shows.push({ t: t0 + 0.45, kind: 'log', cls: 'bad', who: 'CHN', msg: `CORRUPT data seq=${seq}` })
+    } else if (e.type === 'PACKET_BUFFERING') {
+      const t = pop(dataLand, seq) ?? e.t
+      lastRecvTr = t
+      pendBufSeq = seq
+      pendBufT = t
+      shows.push({ t, kind: 'buffer', seq })
+      shows.push({ t, kind: 'log', cls: 'info', who: 'RCV', msg: `buffer seq=${seq} (gap ahead)` })
+    } else if (e.type === 'ACK_SENT') {
+      // The ack rides the data packet that just landed. A BUFFERING for this
+      // seq immediately prior already popped that landing — reuse it.
+      const t = pendBufSeq === seq ? pendBufT : (pop(dataLand, seq) ?? e.t)
+      pendBufSeq = -1
+      curArrT = t
+      curArrSeq = seq
+      lastRecvTr = t
+      const fate = fateOf('ack', seq, chNext)
+      const f: Flight = { kind: 'ack', seq, label: seq, t0: t, fate }
+      flights.push(f)
+      if (fate !== 'dropped') push(ackLand, seq, t + 1)
+      shows.push({ t, kind: 'log', cls: 'ack', who: 'RCV', msg: `ACK ▴ seq=${seq}` })
+      if (fate === 'dropped')
+        shows.push({ t: t + deathFrac(seq, t), kind: 'log', cls: 'bad', who: 'CHN', msg: `LOST ack seq=${seq}` })
+    } else if (e.type === 'DELIVERED_TO_APP') {
+      // Base delivery and any buffered packets it drains all pop at the moment
+      // the base packet arrived.
+      const t = curArrSeq >= 0 ? curArrT : e.t
+      shows.push({ t, kind: 'deliver', seq })
+      shows.push({ t, kind: 'log', cls: 'good', who: 'RCV', msg: `DELIVER ▸ app seq=${seq}` })
+    } else if (e.type === 'PACKET_DISCARDED' && e.actor === 'receiver') {
+      const t = pop(dataLand, seq) ?? e.t
+      lastRecvTr = t
+      const bad = d.reason === 'CORRUPTED PACKET'
+      shows.push({ t, kind: 'rflash', seq, bad })
+      shows.push({
+        t,
+        kind: 'log',
+        cls: bad ? 'bad' : 'info',
+        who: 'RCV',
+        msg: `discard seq=${seq} (${bad ? 'checksum' : String(d.reason).toLowerCase()})`,
+      })
+    } else if (e.type === 'ACK_RECEIVED' && e.actor === 'sender') {
+      const t = Math.max(pop(ackLand, seq) ?? e.t, senderCursor)
+      senderCursor = t
+      lastCauseTr = t
+      shows.push({ t, kind: 'ackmark', seq })
+      shows.push({ t, kind: 'log', cls: 'ack', who: 'SND', msg: `ack in seq=${seq}` })
+    } else if (e.type === 'PACKET_DISCARDED' && e.actor === 'sender') {
+      const t = Math.max(pop(ackLand, seq) ?? e.t, senderCursor)
+      senderCursor = t
+      lastCauseTr = t
+      shows.push({ t, kind: 'sflash', seq })
+      shows.push({ t, kind: 'log', cls: 'info', who: 'SND', msg: `ignore ack seq=${seq}` })
+    } else if (e.type === 'TIMER_START') {
+      if (openPerSeq.has(seq)) closeTimer(seq, lastCauseTr, false)
+      openPerSeq.set(seq, lastCauseTr)
+    } else if (e.type === 'TIMER_TIMEOUT') {
+      closeTimer(seq, e.t, true)
+      shows.push({ t: e.t, kind: 'log', cls: 'warn', who: 'SND', msg: `TIMEOUT — resend seq=${seq}` })
+    } else if (e.type === 'TIMER_STOP') {
+      closeTimer(seq, lastCauseTr, false)
+    } else if (e.type === 'WINDOW_UPDATE' && e.actor === 'sender') {
+      shows.push({ t: lastCauseTr, kind: 'win', base: d.base, next: d.nextseqnum })
+    } else if (e.type === 'WINDOW_UPDATE' && e.actor === 'receiver') {
+      shows.push({ t: lastRecvTr, kind: 'rwin', base: d.base })
+    }
+  }
+
+  const tEnd = flights.length ? Math.max(...flights.map((f) => f.t0)) + 3 : 3
+  for (const [seq, t0] of openPerSeq) shows.push({ t: t0, kind: 'timer', seq, t1: tEnd, fired: false })
+
+  shows.sort((a, b) => a.t - b.t)
+  return { params, flights, shows, tEnd }
 }
 
 /* ------------------------------------------------------------------ */
