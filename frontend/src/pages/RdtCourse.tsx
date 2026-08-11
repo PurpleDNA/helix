@@ -364,7 +364,7 @@ export default function RdtCourse({ onScenario }: { onScenario: (p: RunParams) =
           </h3>
           <p className="lede">
             The internet was never built to guarantee delivery. Reliability is something the
-            endpoints have to construct on top of a network that makes no promises.
+            end systems have to construct on top of a network that makes no promises.
           </p>
           <p>
             Every byte you send across the internet rides on top of <strong>IP</strong>, the
@@ -412,8 +412,8 @@ export default function RdtCourse({ onScenario }: { onScenario: (p: RunParams) =
             This is a deliberate design choice, not an oversight — it's the internet's{' '}
             <strong>end-to-end principle</strong>: keep the network core simple and dumb (just move
             packets), and push intelligence — reliability, ordering, flow control — to the
-            endpoints that actually care about it. IP stays fast and general-purpose; the endpoints
-            solve reliability for the applications that need it.
+            end systems that actually care about it. IP stays fast and general-purpose; the end
+            systems solve reliability for the applications that need it.
           </p>
           <details className="nugget">
             <summary>Why not just make IP reliable?</summary>
