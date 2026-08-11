@@ -77,6 +77,29 @@ type FieldKey = "nMessages" | "loss" | "corrupt" | "window" | "rto";
 const clamp = (n: number, lo: number, hi: number, fallback: number) =>
   Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : fallback;
 
+// What the instrument accepts. `window`'s ceiling is dynamic (see maxWindow).
+const RANGES: Record<FieldKey, { lo: number; hi: number; label: string }> = {
+  nMessages: { lo: 5, hi: 50, label: "messages" },
+  loss: { lo: 0, hi: 70, label: "loss %" },
+  corrupt: { lo: 0, hi: 70, label: "corrupt %" },
+  window: { lo: 1, hi: 15, label: "window" },
+  rto: { lo: 4, hi: 40, label: "timeout" },
+};
+
+// Only worth explaining where the ceiling looks arbitrary. It isn't: past
+// ~70% nearly every packet dies, so the run becomes almost all retransmission
+// and the event stream grows into the tens of thousands, which the stage
+// cannot animate at a watchable pace. Loss and corruption share the reason,
+// so it is de-duplicated at render rather than repeated per field.
+const CEILING_REASON =
+  "The 70% ceiling is deliberate: past it a run is almost all retransmission, " +
+  "and the timeline grows far longer than the stage can animate.";
+
+const WHY: Partial<Record<FieldKey, string>> = {
+  loss: CEILING_REASON,
+  corrupt: CEILING_REASON,
+};
+
 export default function RdtProtocols() {
   const [protocol, setProtocol] = useState<ProtocolId>(DEFAULTS.protocol);
   // Inputs are free-typed text (digits only) so clearing a field never
@@ -94,6 +117,10 @@ export default function RdtProtocols() {
     "idle",
   );
   const [error, setError] = useState("");
+  // What the last Run had to change about the typed values, and why.
+  const [adjusted, setAdjusted] = useState<
+    { key: FieldKey; text: string; why?: string }[]
+  >([]);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(1);
 
@@ -147,11 +174,14 @@ export default function RdtProtocols() {
     };
   }, [submitted, runId]);
 
-  const setField = (key: FieldKey, raw: string) =>
+  const setField = (key: FieldKey, raw: string) => {
+    // Retyping a field retracts the note about it; the others still stand.
+    setAdjusted((a) => a.filter((x) => x.key !== key));
     setFields((f) => ({
       ...f,
       [key]: raw.replace(key === "rto" ? /[^\d.]/g : /[^\d]/g, ""),
     }));
+  };
 
   const nMessages = clamp(
     parseInt(fields.nMessages, 10),
@@ -178,6 +208,42 @@ export default function RdtProtocols() {
   };
 
   const launch = () => {
+    // Rewriting the box under the learner is only honest if we say so: diff
+    // what they typed against what will actually run, and report the gap.
+    const typed: Record<FieldKey, number> = {
+      nMessages: parseInt(fields.nMessages, 10),
+      loss: parseInt(fields.loss, 10),
+      corrupt: parseInt(fields.corrupt, 10),
+      window: parseInt(fields.window, 10),
+      rto: parseFloat(fields.rto),
+    };
+    const ran: Record<FieldKey, number> = {
+      nMessages: parsed.nMessages,
+      loss: Math.round(parsed.loss * 100),
+      corrupt: Math.round(parsed.corrupt * 100),
+      window: parsed.window,
+      rto: parsed.rto,
+    };
+    setAdjusted(
+      (Object.keys(RANGES) as FieldKey[])
+        // Stop-and-wait pins window to 1 by definition, not by clamping.
+        .filter((k) => !(k === "window" && protocol === "stop_and_wait"))
+        .flatMap((k) => {
+          const { lo, label } = RANGES[k];
+          const hi = k === "window" ? maxWindow : RANGES[k].hi;
+          if (!Number.isFinite(typed[k]))
+            return [{ key: k, text: `${label} was blank — using ${ran[k]}` }];
+          if (typed[k] === ran[k]) return [];
+          const capped = typed[k] > hi;
+          return [
+            {
+              key: k,
+              text: `${label} ${capped ? "capped at" : "raised to"} ${ran[k]} — this instrument accepts ${lo}–${hi}`,
+              why: capped ? WHY[k] : undefined,
+            },
+          ];
+        }),
+    );
     // Reflect what actually runs back into the inputs (clamps, blanks).
     setFields((f) => ({
       nMessages: String(parsed.nMessages),
@@ -210,6 +276,7 @@ export default function RdtProtocols() {
   // launch it, and bring the instrument back into view.
   const runScenario = (params: RunParams) => {
     setProtocol(params.protocol);
+    setAdjusted([]);
     setFields((f) => ({
       nMessages: String(params.nMessages),
       loss: String(Math.round(params.loss * 100)),
@@ -231,10 +298,15 @@ export default function RdtProtocols() {
   const pickProtocol = (id: ProtocolId) => {
     if (id === protocol) return;
     setProtocol(id);
+    // Switching protocol moves the window ceiling, so old notes may be lies.
+    setAdjusted([]);
     // A run in flight belongs to the old protocol; switching type abandons it
     // (same as Stop) so a stale loop can't keep playing under the new pick.
     stop();
   };
+
+  const wasAdjusted = (k: FieldKey) =>
+    adjusted.some((a) => a.key === k) || undefined;
 
   // Readouts/legend describe the running sim, or the form while idle.
   const active = runId === 0 ? parsed : submitted;
@@ -277,6 +349,7 @@ export default function RdtProtocols() {
             <input
               inputMode="numeric"
               value={fields.nMessages}
+              data-adjusted={wasAdjusted("nMessages")}
               onChange={(e) => setField("nMessages", e.target.value)}
             />
           </label>
@@ -285,6 +358,7 @@ export default function RdtProtocols() {
             <input
               inputMode="numeric"
               value={fields.loss}
+              data-adjusted={wasAdjusted("loss")}
               onChange={(e) => setField("loss", e.target.value)}
             />
           </label>
@@ -293,6 +367,7 @@ export default function RdtProtocols() {
             <input
               inputMode="numeric"
               value={fields.corrupt}
+              data-adjusted={wasAdjusted("corrupt")}
               onChange={(e) => setField("corrupt", e.target.value)}
             />
           </label>
@@ -302,6 +377,7 @@ export default function RdtProtocols() {
               inputMode="numeric"
               value={protocol === "stop_and_wait" ? "1" : fields.window}
               disabled={protocol === "stop_and_wait"}
+              data-adjusted={wasAdjusted("window")}
               onChange={(e) => setField("window", e.target.value)}
             />
           </label>
@@ -310,6 +386,7 @@ export default function RdtProtocols() {
             <input
               inputMode="decimal"
               value={fields.rto}
+              data-adjusted={wasAdjusted("rto")}
               onChange={(e) => setField("rto", e.target.value)}
             />
           </label>
@@ -322,6 +399,20 @@ export default function RdtProtocols() {
             selective repeat needs window ≤ half the sequence space (≤{" "}
             {maxWindow} here)
           </p>
+        )}
+        {adjusted.length > 0 && (
+          <ul className="form-adjust" role="status">
+            {adjusted.map((a) => (
+              <li key={a.key}>{a.text}</li>
+            ))}
+            {[...new Set(adjusted.map((a) => a.why).filter(Boolean))].map(
+              (why) => (
+                <li key={why} className="why">
+                  {why}
+                </li>
+              ),
+            )}
+          </ul>
         )}
       </form>
 

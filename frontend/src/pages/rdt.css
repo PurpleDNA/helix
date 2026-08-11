@@ -126,6 +126,34 @@
   color: var(--text-soft);
 }
 
+/* Out-of-range values used to be rewritten silently, so a typed 80 became a
+   70 with no explanation. Mark the input and say what happened. */
+.rdt-form input[data-adjusted] {
+  border-color: var(--warn);
+  box-shadow: 0 0 0 3px rgb(229 179 94 / 0.16);
+}
+
+.form-adjust {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 1px 0 1px 10px;
+  border-left: 2px solid var(--warn);
+  list-style: none;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-soft);
+  text-wrap: pretty;
+}
+
+/* The shared "why", once, under whichever fields triggered it. */
+.form-adjust .why {
+  margin-top: 3px;
+  max-width: 46rem;
+  opacity: 0.85;
+}
+
 /* ---- shared button ------------------------------------------------- */
 .rdt .btn {
   font-family: 'Geist Mono', ui-monospace, monospace;
