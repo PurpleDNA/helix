@@ -59,16 +59,21 @@
   box-sizing: border-box;
 }
 
-/* pixel-art cursors: moss arrow everywhere, mint over anything clickable */
+/* Standard arrow / pointing-hand shapes in moss. CSS can't tint the native OS
+   cursor, so keeping the colour means shipping the art; the second declaration
+   swaps in the 2x asset on HiDPI and is ignored where image-set() isn't known. */
 html {
   cursor: url('/cursors/arrow.png') 1 1, auto;
+  cursor: image-set(url('/cursors/arrow.png') 1x, url('/cursors/arrow@2x.png') 2x) 1 1, auto;
 }
 
 a,
 button,
 [role='button'],
 summary {
-  cursor: url('/cursors/pointer.png') 1 1, pointer;
+  cursor: url('/cursors/pointer.png') 6 1, pointer;
+  cursor: image-set(url('/cursors/pointer.png') 1x, url('/cursors/pointer@2x.png') 2x) 6 1,
+    pointer;
 }
 
 body {

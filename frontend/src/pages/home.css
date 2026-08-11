@@ -112,7 +112,6 @@
   background: var(--helix-moss);
   border: none;
   border-radius: 0;
-  cursor: url('/cursors/pointer.png') 1 1, pointer;
   box-shadow: 5px 5px 0 rgba(157, 191, 120, 0.3);
   transition:
     transform 0.12s ease,
