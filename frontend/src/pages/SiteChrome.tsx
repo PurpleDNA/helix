@@ -30,6 +30,7 @@ export function SiteHeader() {
         <Brand />
         <nav className="site-nav">
           <NavLink to="/rdt">RDT</NavLink>
+          <NavLink to="/traceroute">Traceroute</NavLink>
         </nav>
       </div>
       <div className="landing-header-right">
