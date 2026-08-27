@@ -1,0 +1,23 @@
+/* The globe fills whatever box it is given; the canvas is appended by three.js
+   and sized from the host's client box, so the layout decides, not WebGL. */
+
+.globe {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  /* the canvas is transparent, so --helix-night shows through from the page */
+  touch-action: none;
+}
+
+.globe canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* dragging the globe should turn it, not select the page around it */
+  user-select: none;
+  cursor: grab;
+}
+
+.globe canvas:active {
+  cursor: grabbing;
+}
