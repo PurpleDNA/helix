@@ -9,6 +9,7 @@ import {
 import App from './App'
 import Home from './pages/Home'
 import RdtProtocols from './pages/RdtProtocols'
+import Traceroute from './pages/Traceroute'
 import './index.css'
 
 // Pathless root: scroll to top on navigation (and restore on back/forward).
@@ -31,7 +32,10 @@ const router = createBrowserRouter([
       {
         path: '/',
         element: <App />,
-        children: [{ path: 'rdt', element: <RdtProtocols /> }],
+        children: [
+          { path: 'rdt', element: <RdtProtocols /> },
+          { path: 'traceroute', element: <Traceroute /> },
+        ],
       },
     ],
   },
